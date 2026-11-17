@@ -1,0 +1,1778 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FOB Power Planner</title>
+<link rel="stylesheet" href="vendor/leaflet.css">
+<script src="vendor/chart.umd.js"></script>
+<script src="vendor/leaflet.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#0f1512;--panel:#18211c;--panel2:#1f2a24;--line:#2f3d35;--ink:#e6ede8;--muted:#9aaba1;--accent:#d9a441;--accent2:#5fb3a1;
+--t1:#e0574f;--t2:#d9a441;--t3:#6d9ed6;--pv:#f2c94c;--gen:#e07a3f;--bat:#4fb6c9;--grid:#a58be0;--ok:#5cc690;--bad:#e0574f;
+--mono:ui-monospace,Consolas,monospace;--body:"Segoe UI",system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:14px}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:6px 11px}
+button:hover{border-color:var(--accent)}
+button.on,button.primary{background:var(--accent);border-color:var(--accent);color:#1a1405;font-weight:600}
+button.small{padding:3px 8px;font-size:12px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=number],select,input[type=text]{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:5px;padding:3px 6px;font:inherit;width:90px}
+.app{display:grid;grid-template-columns:230px 1fr 470px;grid-template-rows:auto 1fr;height:100vh}
+header{grid-column:1/4;display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);background:#121a16;flex-wrap:wrap}
+header h1{font-size:18px;margin:0 8px 0 0;letter-spacing:.04em}
+header h1 span{color:var(--accent)}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{border:0;border-radius:0}
+.kpis{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 10px;min-width:96px}
+.kpi b{display:block;font-size:16px;font-family:var(--mono)}
+.kpi small{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;background:var(--bad);margin-right:5px}
+.dot.ok{background:var(--ok)}
+aside.palette{border-right:1px solid var(--line);overflow:auto;padding:10px;background:var(--panel)}
+.palette h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:12px 0 6px}
+.card{display:flex;align-items:center;gap:8px;padding:6px 8px;margin-bottom:5px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;cursor:grab;user-select:none}
+.card:hover{border-color:var(--accent)}
+.card .ic{width:26px;height:26px;border-radius:6px;display:grid;place-items:center;font-size:15px;flex:none}
+.card .nm{font-size:13px;line-height:1.2}
+.card .nm small{display:block;color:var(--muted);font-size:11px}
+main{position:relative;overflow:hidden;background:radial-gradient(ellipse at center,#26332a 0,#141c17 70%)}
+#iso{position:absolute;inset:0;width:100%;height:100%}
+.player{position:absolute;left:12px;right:12px;bottom:10px;background:rgba(18,26,22,.92);border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:flex;gap:10px;align-items:center}
+.player .lbl{font-family:var(--mono);font-size:12px;min-width:150px}
+.legend{position:absolute;left:12px;top:10px;background:rgba(18,26,22,.85);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 8px;vertical-align:-1px}
+.warns{position:absolute;right:12px;top:10px;max-width:300px;display:flex;flex-direction:column;gap:5px}
+.warn{background:rgba(60,30,20,.92);border:1px solid #7a4630;border-radius:7px;padding:5px 9px;font-size:12px}
+.warn.good{background:rgba(20,50,35,.92);border-color:#2f6b4c}
+.inspector{position:absolute;left:12px;top:48px;width:260px;background:rgba(24,33,28,.97);border:1px solid var(--accent);border-radius:9px;padding:10px;display:none;font-size:13px}
+.inspector h4{margin:0 0 6px;font-size:15px}
+.inspector table{width:100%;border-collapse:collapse}
+.inspector td{padding:2px 3px;border-bottom:1px solid var(--line)}
+section.side{border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--panel)}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;padding:8px;border-bottom:1px solid var(--line)}
+.tabs button{padding:5px 9px;font-size:13px}
+.tabpane{overflow:auto;padding:12px;flex:1;display:none}
+.tabpane.show{display:block}
+.box{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px;margin-bottom:10px}
+.box h4{margin:0 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
+.row{display:grid;grid-template-columns:1fr 70px;gap:8px;align-items:center;margin:6px 0}
+.row label{font-size:13px}
+.row output{font-family:var(--mono);font-size:12px;text-align:right}
+.note{color:var(--muted);font-size:12px;line-height:1.45}
+.src{font-size:11px;color:var(--muted);font-style:italic}
+.est{color:#f0b35a;font-size:11px}
+table.t{width:100%;border-collapse:collapse;font-size:12px}
+table.t th{text-align:left;color:var(--muted);font-weight:500;border-bottom:1px solid var(--line);padding:4px}
+table.t td{border-bottom:1px solid var(--line);padding:4px;vertical-align:top}
+.pill{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;font-weight:600;margin:1px}
+.pill.t1{background:var(--t1);color:#fff}.pill.t2{background:var(--t2);color:#1a1405}.pill.t3{background:var(--t3);color:#071528}
+.tierlist{min-height:40px;border:1px dashed var(--line);border-radius:7px;padding:5px;margin:4px 0 8px}
+.chip{display:inline-flex;gap:4px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:2px 6px;margin:2px;font-size:12px;cursor:grab}
+.chip b{font-family:var(--mono);font-weight:500;color:var(--muted)}
+.big{font-family:var(--mono);font-size:22px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.statbox{background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 8px}
+.statbox small{color:var(--muted);font-size:11px;display:block}
+.statbox b{font-family:var(--mono);font-size:15px}
+#map{height:320px;border-radius:8px;border:1px solid var(--line)}
+.timeline{display:flex;height:26px;border-radius:6px;overflow:hidden;border:1px solid var(--line);margin:6px 0}
+.timeline div{display:grid;place-items:center;font-size:11px;color:#111;font-weight:600;white-space:nowrap;overflow:hidden}
+.pace td:first-child{font-weight:700;font-size:16px;font-family:var(--mono)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--accent);color:#1a1405;padding:8px 14px;border-radius:8px;font-weight:600;display:none;z-index:99}
+.busy{opacity:.6;pointer-events:none}
+.spec{display:none}
+.player{flex-wrap:wrap;row-gap:6px}
+.player .scrub{flex:1 1 100%;display:flex;gap:10px;align-items:center}
+.player .speed{width:140px}
+.player select{width:auto}
+.hudstrip{flex:1 1 100%;display:flex;gap:14px;align-items:center;font-size:12px;padding-bottom:6px;border-bottom:1px solid var(--line);flex-wrap:wrap;transition:box-shadow .8s}
+.hudstrip .mono{font-family:var(--mono)}
+.hudstrip .cell{display:flex;gap:6px;align-items:center;white-space:nowrap}
+.gauge{height:10px;width:120px;background:#0b100d;border:1px solid var(--line);border-radius:4px;position:relative;overflow:hidden}
+.gauge i{position:absolute;left:0;top:0;bottom:0;background:var(--ok)}
+.gauge b{position:absolute;top:0;bottom:0;width:2px;background:var(--accent)}
+.evlist{font-family:var(--mono);font-size:11.5px}
+.evlist div{padding:3px 0;border-bottom:1px solid var(--line)}
+.ev-del{color:var(--ok)}.ev-bad{color:var(--bad)}.ev-strike{color:#f08a5d}.ev-info{color:var(--muted)}
+.brief{position:absolute;left:50%;top:52px;transform:translateX(-50%);width:min(560px,92%);background:rgba(20,28,24,.97);border:2px solid var(--accent);border-radius:11px;padding:12px 14px;display:none;z-index:5;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.brief h3{margin:0 0 4px;font-size:16px;color:var(--accent)}
+.brief p{margin:0 0 8px;font-size:13.5px;line-height:1.5}
+.brief .bnav{display:flex;gap:6px;align-items:center}
+.pacebadge{display:inline-block;font-family:var(--mono);font-weight:700;padding:0 6px;border-radius:4px;color:#111}
+.coa-best{color:var(--ok);font-weight:700}
+.coa-worst{color:var(--bad)}
+@media print{
+ body{background:#fff;color:#000}
+ .app{display:none}
+ .spec{display:block;font-size:10.5px;color:#000;padding:0}
+ .spec h1{font-size:17px;margin:0}
+ .spec h2{font-size:12px;margin:8px 0 3px;border-bottom:1.5px solid #000;text-transform:uppercase}
+ .spec table{width:100%;border-collapse:collapse}
+ .spec td,.spec th{border:1px solid #999;padding:2px 4px;text-align:left}
+ .spec .cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+ @page{size:letter;margin:0.45in}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+<header>
+ <h1>FOB <span>POWER</span> PLANNER</h1>
+ <div class="seg" id="segType"><button data-v="exp" class="on">Expeditionary</button><button data-v="exist">Existing</button></div>
+ <div class="seg" id="segSize"><button data-v="CO" class="on">CO FOB</button><button data-v="BN">BN FOB</button></div>
+ <span class="note" id="stdBadge" title="Set by the operating period (Site tab): initial 0-6 months, temporary 6-24, semi-permanent 24+"></span>
+ <span class="note"><span class="dot" id="srvDot"></span><span id="srvTxt">solver offline</span></span>
+ <span class="note" id="siteTxt">Site: -</span>
+ <div class="kpis">
+  <div class="kpi"><small>Total cost</small><b id="kTotal">-</b></div>
+  <div class="kpi"><small>Fuel / day</small><b id="kFuel">-</b></div>
+  <div class="kpi"><small>Solar share</small><b id="kRen">-</b></div>
+  <div class="kpi"><small>Tier 1 power</small><b id="kT1">-</b></div>
+  <div class="kpi"><small>Convoys / mo</small><b id="kConv">-</b></div>
+ </div>
+ <button class="primary" id="btnOpt">Optimize</button>
+ <button id="btnBrief" title="Guided walkthrough for a brief">&#127916; Brief mode</button>
+ <button id="btnPrint">Spec sheet</button><label class="note" title="Add an appendix page: COA comparison, fuel over the deployment, approximation error"><input type="checkbox" id="spec2"> 2-page</label>
+ <button id="btnXlsx" title="Export results to Excel">Excel</button>
+ <button id="btnSaveScn" title="Save this scenario to a file">Save file</button>
+ <button id="btnOpenScn" title="Open a saved scenario file">Open file</button><input type="file" id="scnFile" accept=".json,application/json" style="display:none">
+</header>
+
+<aside class="palette" id="palette"></aside>
+
+<main id="stage">
+ <canvas id="iso"></canvas>
+ <div class="legend" id="legend"></div>
+ <div class="warns" id="warns"></div>
+ <div class="inspector" id="insp"></div>
+ <div class="inspector" id="optBanner" style="left:auto;right:12px;top:auto;bottom:70px;width:340px"></div>
+ <div class="brief" id="brief"></div>
+ <div class="player">
+  <div class="hudstrip" id="hud"></div>
+  <button id="btnBack" class="small" title="Back one day">&#9198;</button>
+  <button id="btnPlay" class="small primary" style="min-width:74px">&#9654; Play</button>
+  <button id="btnFwd" class="small" title="Forward one day">&#9197;</button>
+  <span class="note">Speed</span><input type="range" id="speed" class="speed" min="0" max="100" value="38" title="6 game-minutes per second up to 10 months per second">
+  <span class="lbl" id="speedLbl" style="min-width:80px"></span>
+  <span class="note">Deployment starts in</span>
+  <select id="selSeason"><option value="0">Winter</option><option value="1">Spring</option><option value="2" selected>Summer</option><option value="3">Fall</option></select>
+  <button id="btnSound" class="small" title="Sound on/off">&#128266;</button>
+  <div class="scrub"><input type="range" id="clock" min="0" max="8759" value="12"><span class="lbl" id="hourLbl" style="min-width:290px">D+0 12:00</span></div>
+ </div>
+</main>
+
+<section class="side">
+ <div class="tabs" id="tabs">
+  <button data-t="site" class="on">Site</button><button data-t="tiers">Tiers</button><button data-t="energy">Energy</button>
+  <button data-t="dispatch">Dispatch</button><button data-t="trends">Over time</button><button data-t="pace">PACE</button><button data-t="resupply">Resupply</button>
+  <button data-t="whatif">What-if</button><button data-t="coa">COAs</button><button data-t="log" id="tabLogBtn">Log</button><button data-t="model">Model &amp; error</button>
+ </div>
+
+ <div class="tabpane" id="tab-trends">
+  <div class="box"><h4>Cost over the deployment</h4>
+   <div class="seg" id="segCostView" style="margin-bottom:6px"><button data-v="cum" class="on">Running total</button><button data-v="week">Per week</button></div>
+   <canvas id="chCostRun" height="200"></canvas><div class="grid2" id="costRunStats" style="margin-top:8px"></div>
+   <p class="note">Buy cost is paid on day 0. Fuel is charged at the fully burdened price as it burns (deliveries are inside that price). The lost-power penalty is the model's price on unserved load, not money spent; click its legend entry to show it. The gold line is the playback clock.</p></div>
+  <div class="box"><h4>Energy over the deployment</h4>
+   <div class="seg" id="segEnergyView" style="margin-bottom:6px"><button data-v="day" class="on">Per day</button><button data-v="week">Per week</button></div>
+   <canvas id="chEnergyRun" height="220"></canvas><div class="grid2" id="energyRunStats" style="margin-top:8px"></div>
+   <p class="note">Energy delivered to the loads by source, with generator fuel burned on the right axis. Follows the playback: PACE step-downs, fuel-outs, strikes and the resupply cut all show up here.</p></div>
+ </div>
+
+ <div class="tabpane" id="tab-log">
+  <div class="box"><h4 id="evHead">Event log</h4><p class="note">Everything that has happened up to the playback clock, newest first.</p><div class="evlist" id="evList"><div class="ev-info">Press Play to run the deployment.</div></div></div>
+ </div>
+
+ <div class="tabpane" id="tab-coa">
+  <div class="box"><h4>Save this layout as a course of action</h4>
+   <p class="note">Saves the whole setup: buildings, power yard, site, tiers, sliders, delivery mix and threat settings. Build another layout, save it too, then compare them below. Saved COAs stay in this browser.</p>
+   <div style="display:flex;gap:6px"><input type="text" id="coaName" style="flex:1;width:auto" placeholder="COA name"><button class="small primary" id="btnCoaSave">Save COA</button></div>
+  </div>
+  <div class="box"><h4>Side-by-side</h4><div id="coaTable" class="note">No COAs saved yet.</div>
+   <p class="note"><span class="coa-best">Green</span> = best in that row, <span class="coa-worst">red</span> = worst. Playback rows come from one run of the deployment with the same luck (delays and strikes) for every COA.</p></div>
+  <div class="box"><h4>Cost and risk</h4><canvas id="chCoa" height="170"></canvas></div>
+ </div>
+
+ <div class="tabpane show" id="tab-site">
+  <div class="box"><h4>Pick the location</h4>
+   <div id="map"></div>
+   <p class="note">Click anywhere in the world. The solver pulls a year of hourly sunlight and temperature for that point from NASA POWER (only the coordinates leave the laptop). The 8 marked sites work offline.</p>
+   <div id="presetBtns"></div>
+  </div>
+  <div class="box"><h4>FOB</h4>
+   <div class="row"><label>Personnel</label><output id="oPax"></output></div><input type="range" id="pax" min="50" max="1200" step="10">
+   <div class="row"><label>Operating period (months)</label><output id="oMonths"></output></div><input type="range" id="months" min="1" max="36" value="12">
+   <div class="row"><label>Horizon: sample days per season</label><output id="oDays"></output></div><input type="range" id="days" min="1" max="14" value="1">
+   <p class="note">The horizon slider sets how many real days per season the model sees (1 = 96 hours, 14 = 1,344 hours). More days catch cloudy streaks but solve slower.</p>
+   <div class="row"><label>Terrain look</label><select id="biome" style="width:auto"><option value="auto">Auto from climate</option><option value="desert">Desert</option><option value="jungle">Jungle / tropical</option><option value="mountain">Mountain / high desert</option><option value="temperate">Temperate / farmland</option><option value="arctic">Arctic / cold</option></select></div>
+   <p class="note" id="biomeNote"></p>
+   <p class="note" id="kitNote"></p>
+   <button id="btnTemplate">Rebuild FOB layout for this size</button>
+  </div>
+  <div class="box" id="climateBox"><h4>Climate at this site</h4><canvas id="chClimate" height="150"></canvas><p class="note" id="climNote"></p></div>
+ </div>
+
+ <div class="tabpane" id="tab-tiers">
+  <div class="box"><h4>Priority tiers</h4>
+   <p class="note">Drag a load chip to another tier. When power runs short, Tier 3 is cut first, then Tier 2. Tier 1 is never cut (huge penalty). The sliders set what one kWh of lost power costs in the optimization.</p>
+   <div><span class="pill t1">TIER 1</span> mission critical <span class="note" id="t1kw"></span></div><div class="tierlist" data-tier="0" id="tl0"></div>
+   <div><span class="pill t2">TIER 2</span> life support <span class="note" id="t2kw"></span></div><div class="tierlist" data-tier="1" id="tl1"></div>
+   <div><span class="pill t3">TIER 3</span> personal and comfort <span class="note" id="t3kw"></span></div><div class="tierlist" data-tier="2" id="tl2"></div>
+   <div class="row"><label>Tier 2 lost-power penalty ($/kWh)</label><output id="oPen2"></output></div><input type="range" id="pen2" min="1" max="500" value="60">
+   <div class="row"><label>Tier 3 lost-power penalty ($/kWh)</label><output id="oPen3"></output></div><input type="range" id="pen3" min="0" max="100" value="4">
+  </div>
+  <div class="box"><h4>Demand by tier (sample days)</h4><canvas id="chDemand" height="170"></canvas></div>
+  <div class="box"><h4>Check against published data</h4><div id="calibOut" class="note"></div></div>
+  <div class="box"><h4>Load planning numbers</h4><div id="loadTable"></div>
+   <p class="note"><span class="est">Estimate</span> = planning number JARVIS set for the prototype; the team should replace it with a sourced figure (equipment TMs, ATP 4-41 / base camp planning guides, BCIL data).</p></div>
+ </div>
+
+ <div class="tabpane" id="tab-energy">
+  <div class="box"><h4>Fuel and model settings</h4>
+   <div class="row"><label>Fully burdened fuel cost ($/gal)</label><output id="oFuel"></output></div>
+   <p class="note" style="margin:0">Set on the Resupply tab from your mix of delivery methods. Override here:</p>
+   <label class="note"><input type="checkbox" id="fuelOverride"> override</label><input type="range" id="fuelCost" min="3" max="600" value="50" disabled>
+   <div class="row"><label>Overage on load, k&#772; (paper: 0.3)</label><output id="oOver"></output></div><input type="range" id="overage" min="0" max="0.5" step="0.05" value="0.3">
+   <div class="row"><label>Spinning reserve for solar, k<sub>s</sub> (paper: 0.3)</label><output id="oSpin"></output></div><input type="range" id="spin" min="0" max="0.6" step="0.05" value="0.3">
+   <label class="note"><input type="checkbox" id="nplus1" checked> N+1: Tier 1 must survive losing the largest generator</label>
+  </div>
+  <div class="box"><h4>Solar</h4>
+   <div class="row"><label>Max solar the site can hold (kW)</label><output id="oPvMax"></output></div><input type="range" id="pvMax" min="0" max="1500" step="10" value="150">
+   <div class="row"><label>Dust / soiling loss</label><output id="oSoil"></output></div><input type="range" id="soil" min="0" max="0.4" step="0.01" value="0.05">
+   <div class="row"><label>Panel cost ($/kW)</label><output id="oPvCost"></output></div><input type="range" id="pvCost" min="500" max="5000" step="50" value="2000">
+   <p class="src">1-kW panel at $2,000, 18% efficient: Scioletti et al. (2017) Section 4.1.2. PV output uses NASA horizontal irradiance, 14% system losses (PVWatts default), -0.37%/&deg;C above 25&deg;C cell temperature, NOCT 45&deg;C.</p>
+  </div>
+  <div class="box" id="gridBox"><h4>Host-nation grid (existing FOB)</h4>
+   <label class="note"><input type="checkbox" id="gridOn"> grid connection available</label>
+   <div class="row"><label>Grid reliability (share of hours up)</label><output id="oGridRel"></output></div><input type="range" id="gridRel" min="0.3" max="1" step="0.05" value="0.75">
+   <div class="row"><label>Grid capacity (kW)</label><output id="oGridKw"></output></div><input type="range" id="gridKw" min="0" max="1000" step="10" value="150">
+   <div class="row"><label>Grid price ($/kWh)</label><output id="oGridPrice"></output></div><input type="range" id="gridPrice" min="0.05" max="1.5" step="0.05" value="0.30">
+  </div>
+  <div class="box"><h4>Equipment library</h4><div id="libTable"></div>
+   <p class="src">Generators 15-100 kW: costs and fuel lines (gal/h = b&middot;kW + c) from Scioletti et al. (2017) Table 2; batteries: A123 Li-ion at $500/kWh, Table 3, scaled. Rows marked <span class="est">estimate</span> are scaled by JARVIS and need a sourced spec (Project task 1).</p></div>
+ </div>
+
+ <div class="tabpane" id="tab-dispatch">
+  <div class="box"><h4>Hourly dispatch <span class="note" id="dispSrc"></span></h4>
+   <div class="seg" id="segDisp" style="margin-bottom:6px"><button data-v="sim" class="on">Your layout (live)</button><button data-v="opt">Optimized (MILP)</button></div>
+   <canvas id="chDisp" height="230"></canvas><canvas id="chSoc" height="90"></canvas></div>
+  <div class="box"><h4>Where the energy comes from</h4><div class="grid2" id="energySplit"></div></div>
+ </div>
+
+ <div class="tabpane" id="tab-pace">
+  <div class="box"><h4>Power PACE plan</h4>
+   <p class="note">Recommended from the current design. Use the arrows to reorder; click a tier pill to switch it on or off for that level. Endurance uses the fuel on hand from the Resupply tab.</p>
+   <table class="t pace" id="paceTable"></table>
+   <button class="small" id="btnPaceReset">Reset to recommended</button>
+  </div>
+  <div class="box"><h4>Automatic PACE switching during playback</h4>
+   <label class="note"><input type="checkbox" id="paceAuto" checked> step down the PACE plan as fuel runs low</label>
+   <div class="row"><label>Go to <b>A</b>lternate below fuel</label><output id="oPaceA"></output></div><input type="range" id="paceA" min="0.05" max="0.9" step="0.05" value="0.4">
+   <div class="row"><label>Go to <b>C</b>ontingency below fuel</label><output id="oPaceC"></output></div><input type="range" id="paceC" min="0.02" max="0.8" step="0.02" value="0.2">
+   <div class="row"><label>Go to <b>E</b>mergency below fuel</label><output id="oPaceE"></output></div><input type="range" id="paceE" min="0.01" max="0.5" step="0.01" value="0.08">
+   <p class="note">Each level powers only the tiers switched on in its row above; shedding tiers saves fuel (generator burn scales with the load served, never below 30%: a playback approximation). If fuel runs out, the FOB drops to the battery + solar level. Steps back up when a delivery refills storage.</p>
+  </div>
+  <div class="box"><h4>Expenditures by power source</h4><table class="t" id="spendTable"></table></div>
+ </div>
+
+ <div class="tabpane" id="tab-resupply">
+  <div class="box"><h4>Delivery mix</h4><p class="note">Slide each method's share of fuel delivered. Shares are normalized to 100%.</p><div id="modeSliders"></div></div>
+  <div class="box"><h4>Fuel on hand</h4>
+   <div class="row"><label>Storage at the FOB (gal)</label><output id="oStore"></output></div><input type="range" id="store" min="1000" max="100000" step="500" value="10000">
+   <div class="row"><label>Reorder when storage falls to</label><output id="oReorder"></output></div><input type="range" id="reorder" min="0.2" max="0.8" step="0.05" value="0.5">
+  </div>
+  <div class="box"><h4>Result</h4><div class="grid2" id="resupOut"></div></div>
+  <div class="box"><h4>Fuel over the whole deployment (playback)</h4><canvas id="chFuelRun" height="150"></canvas><p class="note" id="fuelRunNote"></p></div>
+  <div class="box"><h4>Method data</h4><div id="modeTable"></div>
+   <p class="src">Casualty factor for fuel convoys: 0.042 per convoy (Afghanistan, FY2007) from Army Environmental Policy Institute, "Sustain the Mission Project: Casualty Factors for Fuel and Water Resupply Convoys" (2009) - verify figure before briefing. $50/gal FBCF baseline: Scioletti et al. (2017). Other rows are <span class="est">estimates</span> for the prototype.</p></div>
+ </div>
+
+ <div class="tabpane" id="tab-whatif">
+  <div class="box"><h4>One-click tests</h4>
+   <div class="row"><label>Resupply cut for (days)</label><output id="oCut"></output></div><input type="range" id="cut" min="0" max="30" value="0">
+   <div class="row"><label>In playback, the cut starts on day</label><output id="oCutStart"></output></div><input type="range" id="cutStart" min="1" max="360" value="30">
+   <div class="row"><label>Sandstorm / cloud: solar output</label><output id="oStorm"></output></div><input type="range" id="storm" min="0.1" max="1" step="0.05" value="1">
+   <div class="row"><label>Demand surge (mass casualty, TOC surge)</label><output id="oSurge"></output></div><input type="range" id="surge" min="0" max="1" step="0.05" value="0">
+   <label class="note"><input type="checkbox" id="genFail"> largest generator fails</label>
+   <div style="margin-top:8px"><button class="small" id="btnWhatReset">Clear tests</button></div>
+  </div>
+  <div class="box"><h4>Threat during playback</h4>
+   <div class="row"><label>Strikes per month (indirect fire / UAS)</label><output id="oThreat"></output></div><input type="range" id="threat" min="0" max="10" step="0.5" value="0">
+   <p class="note">Each strike hits a random generator, solar array, battery or building and knocks it out until repaired: generators 1-3 days, solar 2-7, battery 2-5 (<span class="est">estimates</span>). Counter-UAS sites stop 70% of drone attacks (<span class="est">estimate</span>); indirect fire is not intercepted. Lost capacity sheds Tier 3, then Tier 2, then Tier 1.</p>
+   <p class="note">Late deliveries come from each method's reliability on the Resupply tab: an unreliable trip arrives 1-4 days late (weather or enemy activity on the route).</p>
+   <button class="small" id="btnReroll">Reroll the luck (delays and strikes)</button> <span class="note" id="seedTxt"></span>
+  </div>
+  <div class="box"><h4>Resupply cut: when do the lights go out?</h4><div id="cutOut" class="note">Set a cut length above.</div></div>
+  <div class="box"><h4>Effect on this design</h4><div class="grid2" id="whatOut"></div></div>
+ </div>
+
+ <div class="tabpane" id="tab-model">
+  <div class="box"><h4>Model (U), Scioletti et al. (2017)</h4>
+   <p class="note">Mixed-integer linear model: buy generators, batteries and panels and dispatch them hour by hour at least cost. The paper's nonlinear model (P) has a quadratic fuel curve (set to linear, a<sub>f</sub>=0, since maker data are linear), battery power = voltage &times; current, and SOC &times; current in battery aging. (U) linearizes binary&times;current exactly (24a-e) and SOC&times;current with a McCormick under-estimator (25a-h).</p>
+   <p class="note"><b>Added for this project:</b> three load tiers with lost-power penalties, a host-nation grid with outages, equipment already owned at zero cost, representative-day blocks (battery starts each day at 50% and must end at least there), and an N+1 generator rule.</p>
+   <p class="note"><b>Solution approach (paper Section 3):</b> heuristic H screens hundreds of candidate designs with the nonlinear battery equations, then (U) is solved to a 2% gap for the four best generator/battery choices with solar size free.</p>
+  </div>
+  <div class="box"><h4>Last optimization</h4><div id="optStats" class="note">Press Optimize.</div></div>
+  <div class="box"><h4>Approximation error vs the nonlinear model (P)</h4><div id="errStats" class="note">Press Optimize.</div><canvas id="chErr" height="140"></canvas></div>
+  <div class="box"><h4>Design leaderboard (heuristic screen)</h4><div id="leader" class="note">Press Optimize.</div></div>
+  <div class="box"><h4>Check: full model with every design choice free</h4>
+   <p class="note">Solves the monolithic (U) with a time limit and reports the gap, to check the screening did not miss a better design.</p>
+   <button class="small" id="btnFull">Run full model (30 s)</button><div id="fullOut" class="note"></div></div>
+ </div>
+</section>
+</div>
+
+<div class="spec" id="spec"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+// ======================= catalog (planning numbers) =======================
+// kw = average draw while active. prof: flat | day | night | evening. hv = HVAC kW at full cooling load for a tent.
+const EST = true;
+const CAT = {
+ toc:   {name:"Command post (TOC)", ic:"★", col:"#8f6a3a", w:3,d:2,h:30, items:[["C2 systems / CPOF",0,6,"flat"],["SIPR suite",0,3,"flat"],["NIPR suite",0,3,"flat"],["Lighting",1,1.5,"night"]], hv:8.8, hvTier:0, est:EST, bn:1, co:1, src:"toc"},
+ comms: {name:"Comms / SATCOM node", ic:"\u{1F4E1}", col:"#5a6f8f", w:2,d:2,h:22, items:[["SATCOM terminal",0,3.5,"flat"],["Radio retrans",0,1.5,"flat"]], hv:2.5, hvTier:0, est:EST, bn:2, co:1},
+ aid:   {name:"Aid station (Role 1/2)", ic:"✚", col:"#a64a46", w:3,d:2,h:24, items:[["Critical medical equipment",0,6,"flat"],["Blood / medicine refrigeration",0,1.5,"flat"],["Lighting",1,1,"night"]], hv:6, hvTier:0, est:EST, bn:1, co:1},
+ fp:    {name:"Guard tower / ECP", ic:"\u{1F6E1}", col:"#6b6b4a", w:1,d:1,h:34, items:[["Force protection sensors and lights",0,1.2,"night"]], hv:0, hvTier:1, est:EST, bn:6, co:4},
+ cuas:  {name:"Counter-UAS site", ic:"\u{1F6F0}", col:"#4d5a4a", w:1,d:1,h:20, items:[["Counter-UAS radar / effector",0,4,"flat"]], hv:0, hvTier:0, est:EST, bn:2, co:1},
+ fuel:  {name:"Fuel and water point", ic:"⛽", col:"#55606a", w:2,d:2,h:14, items:[["Fuel and water pumps",0,2.5,"day"]], hv:0, hvTier:1, est:EST, bn:1, co:1},
+ bill:  {name:"Billeting tent (20 pax)", ic:"⛺", col:"#7d7a55", w:2,d:3,h:16, items:[["Lighting",1,0.6,"night"],["Phones and laptops",2,0.8,"evening"]], hv:8.8, hvTier:1, est:EST, perPax:20, src:"bill"},
+ dfac:  {name:"Dining facility", ic:"\u{1F372}", col:"#7a5a3a", w:3,d:3,h:20, items:[["Kitchen equipment",1,14,"day"],["Refrigeration",1,4,"flat"],["Lighting",1,1.2,"night"]], hv:8, hvTier:1, est:EST, perPax:150, min:1, src:"pnnl"},
+ hyg:   {name:"Shower unit (containerized)", ic:"\u{1F6BF}", col:"#4a6a7a", w:2,d:1,h:12, items:[["Water pumps and lights (water heater is fuel-fired)",1,2,"evening"]], hv:1, hvTier:1, est:EST, perPax:75, min:1, src:"pnnl"},
+ latr:  {name:"Latrine unit (containerized)", ic:"\u{1F6BB}", col:"#4a6a6a", w:2,d:1,h:12, items:[["Lights, pumps, ventilation",1,1.2,"flat"]], hv:0, hvTier:1, est:EST, perPax:75, min:1, src:"pnnl"},
+ laun:  {name:"Laundry (containerized)", ic:"\u{1F9FA}", col:"#4a5a7a", w:2,d:1,h:12, items:[["Washers and dryers",1,12,"day"]], hv:0, hvTier:1, est:EST, perPax:150, min:1, src:"pnnl"},
+ drain: {name:"Drainage / sump pumps (jungle kit)", ic:"\u{1F30A}", col:"#3f5f6a", w:1,d:1,h:10, items:[["Sump and drainage pumps",1,1.5,"flat"]], hv:0, hvTier:1, est:EST, region:"jungle", bn:3, co:1, src:"region"},
+ vheat: {name:"Vehicle warming tent (cold kit)", ic:"\u{1F525}", col:"#6a5040", w:3,d:2,h:18, items:[["Engine block heaters",1,6,"night"],["Lighting",1,0.8,"night"]], hv:6, hvTier:1, est:EST, region:"arctic", bn:2, co:1, src:"region"},
+ rowpu: {name:"Water purification", ic:"\u{1F4A7}", col:"#3f6f8a", w:2,d:1,h:12, items:[["Purification unit",1,5,"day"]], hv:0, hvTier:1, est:EST, bn:1, co:1},
+ maint: {name:"Motor pool / maintenance", ic:"\u{1F527}", col:"#6a5a4a", w:3,d:2,h:20, items:[["Tools, compressors, lifts",1,9,"day"],["Lighting",1,1,"night"]], hv:4, hvTier:1, est:EST, bn:1, co:1, src:"cop"},
+ hlz:   {name:"Helicopter landing zone", ic:"\u{1F681}", col:"#77705a", w:3,d:3,h:1, items:[["Landing lights",0,0.4,"night"]], hv:0, hvTier:0, est:EST, bn:1, co:1, src:"cop"},
+ mwr:   {name:"MWR tent (gym, Wi-Fi)", ic:"\u{1F3CB}", col:"#5f4f7a", w:2,d:2,h:16, items:[["TVs, Wi-Fi, gym",2,3,"evening"]], hv:4, hvTier:2, est:EST, perPax:250, min:0, src:"mwr"},
+};
+// Where the building list comes from (online research, 16 Nov 2026)
+const SRC = {
+ fp:"Force Provider base camp modules: containerized latrine, shower and batch-laundry systems, TEMPER tents for billeting, dining, laundry and MWR (army.mil 2010, 2017; Wikipedia 'Force Provider').",
+ cop:"Typical outpost in Afghanistan: HLZ, dining facility, fuel point, motor pool, medical facility, generators, HESCO perimeter, guard towers (Health.mil POEMS for COPs near Gamberi; USACE welcome guide; Army Engineer 2008).",
+ mwr:"MWR is an add-on kit to the 150-person Force Provider baseline (army.mil 2017). PNNL's modeled 600-Soldier camp has MWR game-room, gym and theater tents; its 150-Soldier camp has none (PNNL-23133, App. B). Default: none at the initial standard, BN only at temporary, everyone at semi-permanent.",
+ pnnl:"Counts follow PNNL-23133 (2014) App. B. 150-Soldier camp: 8 billet tents, 1 dining tent, kitchen and freezer Tricons, 2 latrine, 1 laundry and 2 shower Tricons. 600-Soldier camp: 32 billet tents, 4 dining tents, 8 latrine, 4 laundry, 8 shower Tricons. Water heaters are fuel-fired (AWH 400), so showers draw little electricity.",
+ bill:"Tent air conditioner sized from the 60k BTU/h IECU: about 10.6 kW maximum electrical draw (PM MEP prototype data, DTIC briefing); the model reaches that at its hottest-hour factor of 1.2. PNNL-23133 lists the baseline as uninsulated air-beam tents with standard ECUs; insulated shelters used 83% less fuel in its field test.",
+ toc:"Field battalion CPs at JPMRC ran on generators well over 15 kW while averaging about 2 kW (army.mil, 'Watts next for sustainment'). A FOB TOC with SIPR/NIPR suites and screens draws more; these figures are planning estimates within that range, and the TOC gets one 60k BTU/h ECU.",
+ region:"Region add-on (planning estimate). Force Provider offers a cold-weather add-on kit (army.mil 2017); the jungle drainage kit and the HVAC changes (jungle: ECUs run all day to dehumidify; desert: +10% for dust-clogged filters) are JARVIS estimates.",
+};
+// published figures to check the model against (PNNL-23133, 2014)
+const CALIB = {
+ co:{pax:150, gens:"6 × 60 kW TQG (spot generation)", micro:"3 × 100 kW + 250 kWh battery + 52 kW PV", galBase:346.4, galMicro:242.3, note:"Fort Devens BCIL field test, 24 h under the TIAX load profile (Table 3-3)"},
+ bn:{pax:600, gens:"24 × 60 kW TQG (spot generation)", micro:"4 × 300 kW microgrid + 206 kW PV", note:"modeled, about four times the 150-Soldier camp plus extra buildings (Table 3-2)"},
+};
+const POWER = {
+ gen:  {name:"Generator", ic:"⚡", col:"#c96a35"},
+ pv:   {name:"Solar array (10 kW)", ic:"☀", col:"#2c4f86", w:2,d:2,h:6, kw:10},
+ bat:  {name:"Battery bank", ic:"\u{1F50B}", col:"#2f7f8f"},
+};
+let LIB = {
+ gens:[
+  {name:"15 kW",kw:15,cost:25573,b:0.0547,c:0.25,max_count:3,min_frac:0.3,src:"Paper Table 2"},
+  {name:"30 kW",kw:30,cost:29376,b:0.0593,c:0.54,max_count:3,min_frac:0.3,src:"Paper Table 2"},
+  {name:"60 kW",kw:60,cost:31967,b:0.0645,c:0.59,max_count:3,min_frac:0.3,src:"Paper Table 2"},
+  {name:"100 kW",kw:100,cost:37691,b:0.0644,c:0.95,max_count:4,min_frac:0.3,src:"Paper Table 2"},
+  {name:"200 kW",kw:200,cost:62000,b:0.0640,c:1.80,max_count:4,min_frac:0.3,src:"estimate",est:true},
+ ],
+ bats:[
+  {name:"50 kWh",kwh:50,cost:25000,src:"Paper Table 3"},{name:"100 kWh",kwh:100,cost:50000,src:"Paper Table 3"},
+  {name:"150 kWh",kwh:150,cost:75000,src:"Paper Table 3"},{name:"200 kWh",kwh:200,cost:100000,src:"Paper Table 3"},
+  {name:"250 kWh",kwh:250,cost:125000,src:"Paper Table 3"},{name:"500 kWh",kwh:500,cost:250000,src:"estimate",est:true},
+  {name:"1000 kWh",kwh:1000,cost:500000,src:"estimate",est:true},
+ ]
+};
+// resupply methods: fbcf $/gal, gal per trip, soldier-hours exposed per trip, casualties per trip, reliability
+let MODES = [
+ {id:"convoy",name:"Ground convoy",share:70,fbcf:30,gal:12500,exp:240,cas:0.042,rel:0.92,lead:48,src:"AEPI 2009 casualty factor; others estimate"},
+ {id:"sling",name:"Sling load (CH-47 / UH-60)",share:15,fbcf:120,gal:1500,exp:14,cas:0.002,rel:0.85,lead:8,src:"estimate"},
+ {id:"air",name:"Airdrop / C-130 landing",share:5,fbcf:250,gal:6000,exp:30,cas:0.003,rel:0.80,lead:24,src:"estimate"},
+ {id:"ship",name:"Ship + contractor trucks",share:10,fbcf:12,gal:9000,exp:0,cas:0,rel:0.70,lead:168,src:"estimate"},
+];
+
+// ======================= state =======================
+const S = {type:"exp", size:"CO", pax:150, months:12, days:1, site:null, climate:null, placed:[], tierOv:{}, sel:null,
+ season:2, hour:12, sim:null, opt:null, dispMode:"sim", pace:null, uid:1,
+ clock:12, rate:3, playing:false, anims:[], seed:20271, startSeason:2, camp:null, siteRef:null};
+const $ = id => document.getElementById(id);
+const fmt = (v,d=0) => (v==null||isNaN(v)) ? "-" : Number(v).toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d});
+const money = v => v==null ? "-" : (Math.abs(v)>=1e6 ? "$"+fmt(v/1e6,2)+"M" : "$"+fmt(v/1e3,0)+"k");
+function toast(m){const t=$("toast");t.textContent=m;t.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display="none",2600)}
+
+// ======================= server =======================
+let SERVER=false;
+async function api(path, body){
+ const r = await fetch(path, body ? {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)} : {});
+ return r.json();
+}
+async function ping(){try{const r=await api("/api/ping");SERVER=!!r.ok}catch(e){SERVER=false}
+ $("srvDot").classList.toggle("ok",SERVER);$("srvTxt").textContent=SERVER?"solver online":"solver offline: run server.py"}
+
+// ======================= iso canvas =======================
+let N=28, TW=44, TH=22;
+const cv=$("iso"); let cx=cv.getContext("2d");
+let OX=0, OY=0, hoverTile=null, dragItem=null, dragNew=null;
+function resize(){const r=cv.getBoundingClientRect();cv.width=r.width*devicePixelRatio;cv.height=r.height*devicePixelRatio;cx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+ TW=Math.max(16,Math.min(48,(r.width-30)/N,2*(r.height-175)/N));TH=TW/2;OX=r.width/2;OY=Math.max(34,(r.height-140-N*TH)/2);draw()}
+const toScr=(x,y)=>[OX+(x-y)*TW/2, OY+(x+y)*TH/2];
+function toTile(px,py){const a=(px-OX)/(TW/2), b=(py-OY)/(TH/2);return [Math.floor((a+b)/2), Math.floor((b-a)/2)]}
+function fp(it){ // footprint
+ if(it.kind==="b") {const c=CAT[it.type];return [c.w,c.d]}
+ if(it.kind==="pv") return [2,2];
+ if(it.kind==="gen") return [it.kw>=100?2:1, it.kw>=60?2:1];
+ if(it.kind==="bat") return [2, it.kwh>=500?2:1];
+ return [1,1];
+}
+function heightOf(it){if(it.kind==="b")return CAT[it.type].h; if(it.kind==="pv")return 6; if(it.kind==="gen")return 12+it.kw/20; if(it.kind==="bat")return 14; return 10}
+function colorOf(it){if(it.kind==="b")return CAT[it.type].col; return POWER[it.kind].col}
+function occupied(x,y,w,d,ignore){
+ if(x<1||y<1||x+w>N-1||y+d>N-1) return true;
+ return S.placed.some(o=>{if(o===ignore)return false;const [ow,od]=fp(o);return x<o.x+ow&&x+w>o.x&&y<o.y+od&&y+d>o.y});
+}
+function shade(hex,f){const n=parseInt(hex.slice(1),16);let r=n>>16,g=(n>>8)&255,b=n&255;r=Math.min(255,r*f|0);g=Math.min(255,g*f|0);b=Math.min(255,b*f|0);return `rgb(${r},${g},${b})`}
+function poly(pts,fill,stroke){cx.beginPath();pts.forEach((p,i)=>i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1]));cx.closePath();if(fill){cx.fillStyle=fill;cx.fill()}if(stroke){cx.strokeStyle=stroke;cx.stroke()}}
+function curHourIndex(){return S.season*S.days*24 + S.hour}
+function draw(){
+ const r=cv.getBoundingClientRect(); cx.clearRect(0,0,r.width,r.height);
+ const ghi = S.climate ? S.climate.seasons[S.season][(S.dayIx||0)%S.climate.seasons[S.season].length].ghi[S.hour] : (S.hour>6&&S.hour<19?600:0);
+ const light = 0.45 + 0.55*Math.min(1,ghi/800);
+ // terrain, ground, roads and back walls come from a cached layer (redrawn only when the map or biome changes)
+ const L0=staticLayers(r); cx.drawImage(L0.back,0,0,r.width,r.height);
+ const B=BIOMES[biomeKey()];
+ // hover footprint
+ if(hoverTile && (dragNew||dragItem)){
+  const it=dragNew||dragItem; const [w,d]=fp(it); const bad=occupied(hoverTile[0],hoverTile[1],w,d,dragItem);
+  for(let i=0;i<w;i++)for(let j=0;j<d;j++){const [sx,sy]=toScr(hoverTile[0]+i,hoverTile[1]+j);poly([[sx,sy],[sx+TW/2,sy+TH/2],[sx,sy+TH],[sx-TW/2,sy+TH/2]],bad?"rgba(224,87,79,.55)":"rgba(92,198,144,.55)")}
+ }
+ // items sorted back to front
+ const t=curHourIndex(); const ser = currentSeries();
+ const C=S.camp, hC = C ? Math.min(C.H-1,Math.floor(S.clock)) : -1;
+ const shedT = ser ? [0,1,2].map(i=> ((ser.shed? ser.shed[i][t] : (ser.unserved? ser.unserved[i][t]:0)) || 0) + (hC>=0?C.extra[i][hC]:0)) : [0,0,0];
+ const tierLoadNow = S.tierLoads ? [0,1,2].map(i=>S.tierLoads[i][t]||0) : [1,1,1];
+ let genOn = ser ? (ser.gen_units[t]||0) : 0; if(hC>=0&&C.fuelOut[hC]) genOn=0;
+ const down=new Map(); if(hC>=0) C.outages.forEach(o=>{if(S.clock>=o.h0&&S.clock<o.h1)down.set(o.id,o)});
+ drawBladders(hC);
+ let genCount=0;
+ const items=[...S.placed].sort((a,b)=>(a.x+a.y)-(b.x+b.y));
+ for(const it of items){
+  const [w,d]=fp(it); const [sx,sy]=toScr(it.x,it.y); let col=colorOf(it); let L=light;
+  const isDown=down.has(it.id); let running=false;
+  if(it.kind==="b"){ // dim if its main tier is shed now
+   const tiers=itemTiers(it); const main=Math.max(...tiers);
+   const frac = tierLoadNow[main]>0 ? shedT[main]/tierLoadNow[main] : 0;
+   if(frac>0.5) L*=0.45;
+  }
+  if(it.kind==="gen"&&!isDown){ genCount++; running=genCount<=genOn; if(running) L*=1.15; }
+  if(isDown){ col="#5a2a22"; L*=0.85; }
+  const k=SK(), hh=heightOf(it)*k;
+  drawItem(it,w,d,col,L,B,running,ghi);
+  if(it===S.sel||it===hoverItem()){ cx.lineWidth=2; poly([toScr(it.x,it.y),toScr(it.x+w,it.y),toScr(it.x+w,it.y+d),toScr(it.x,it.y+d)],null,"rgba(217,164,65,.9)"); cx.lineWidth=1; }
+  const top=toScr(it.x+w/2,it.y+d/2);
+  cx.textAlign="center";
+  if(isDown){ const o=down.get(it.id); const f=(Date.now()/90)%1;
+   for(let q=0;q<3;q++){cx.fillStyle=`rgba(${240-q*30},${120+q*30},40,${0.75-q*0.2})`;cx.beginPath();cx.arc(top[0]-6+q*6,top[1]-hh-4-((f+q/3)%1)*10,5-q,0,7);cx.fill()}
+   cx.fillStyle="rgba(60,60,60,.55)";cx.beginPath();cx.arc(top[0]+4,top[1]-hh-22-f*8,7+f*4,0,7);cx.fill();
+   cx.font="bold 10px Consolas";cx.fillStyle="#ffb199";cx.fillText(`DOWN ${Math.ceil(o.h1-S.clock)}h`,top[0],top[1]-hh-26); }
+  if(it.kind==="b"&&it.type==="fuel"&&hC>=0){ const f=C.level[hC]/C.store; cx.fillStyle="#111";cx.fillRect(top[0]-16,top[1]-hh-12,32,5);
+   cx.fillStyle=f>C.rl/C.store?"#5cc690":(f>0.1?"#d9a441":"#e0574f");cx.fillRect(top[0]-16,top[1]-hh-12,32*f,5); }
+  if(it.kind==="gen"&&running){ const ph=(Date.now()/400)%1; const [ex,ey]=P3(it.x+w*0.75,it.y+d*0.3,hh+6*k); cx.fillStyle=`rgba(190,190,190,${0.55-ph*0.45})`; cx.beginPath(); cx.arc(ex+ph*4,ey-ph*14,3+ph*5,0,7); cx.fill(); }
+  if(it.kind==="bat"){ const soc = ser&&ser.soc ? (ser.soc[t]||0) : 0.5; cx.fillStyle="#111";cx.fillRect(top[0]-12,top[1]-hh-9,24,4);cx.fillStyle=soc>0.3?"#5cc690":"#e0574f";cx.fillRect(top[0]-12,top[1]-hh-9,24*soc,4) }
+  if(it===S.sel||it===hoverItem()){ label(it.x+w/2-0.5,it.y+d/2-0.5,hh/Math.min(1,TW/44)+18,itemName(it)+(it.owned?" (on site)":""),"#f3e2b0") }
+ }
+ S._genRunning=Math.min(genOn,genCount);
+ cx.drawImage(L0.front,0,0,r.width,r.height);
+ drawSoldiers();
+ // night overlay
+ if(light<0.6){cx.fillStyle=`rgba(5,10,30,${(0.6-light)*0.9})`;cx.fillRect(0,0,r.width,r.height)}
+ drawWeather(ghi); drawSky(r);
+ drawAnims(performance.now());
+}
+function box(sx,sy,w,d,h,col,L,sel){
+ const p0=[sx,sy], p1=[sx+w*TW/2, sy+w*TH/2], p2=[sx+(w-d)*TW/2, sy+(w+d)*TH/2], p3=[sx-d*TW/2, sy+d*TH/2];
+ const up=p=>[p[0],p[1]-h];
+ poly([p3,p2,up(p2),up(p3)], shade(col,0.75*L), "rgba(0,0,0,.35)");
+ poly([p2,p1,up(p1),up(p2)], shade(col,0.95*L), "rgba(0,0,0,.35)");
+ poly([up(p0),up(p1),up(p2),up(p3)], shade(col,1.25*L), sel?"#d9a441":"rgba(0,0,0,.35)");
+ if(sel){cx.lineWidth=2;poly([up(p0),up(p1),up(p2),up(p3)],null,"#d9a441");cx.lineWidth=1}
+}
+
+// pointer interaction
+cv.addEventListener("mousemove",e=>{const r=cv.getBoundingClientRect();hoverTile=toTile(e.clientX-r.left,e.clientY-r.top);if(dragItem)draw()});
+cv.addEventListener("mouseleave",()=>{hoverTile=null});
+function hoverItem(){if(!hoverTile||dragNew||dragItem)return null;const [tx,ty]=hoverTile;return [...S.placed].reverse().find(o=>{const [w,d]=fp(o);return tx>=o.x&&tx<o.x+w&&ty>=o.y&&ty<o.y+d})||null}
+cv.addEventListener("mousedown",e=>{
+ const r=cv.getBoundingClientRect(); const [tx,ty]=toTile(e.clientX-r.left,e.clientY-r.top);
+ const hit=[...S.placed].reverse().find(o=>{const [w,d]=fp(o);return tx>=o.x&&tx<o.x+w&&ty>=o.y&&ty<o.y+d});
+ S.sel=hit||null; inspect(); if(hit){dragItem=hit; dragItem._ox=hit.x; dragItem._oy=hit.y} draw();
+});
+window.addEventListener("mouseup",()=>{
+ if(dragItem&&hoverTile){const [w,d]=fp(dragItem);
+  if((hoverTile[0]!==dragItem.x||hoverTile[1]!==dragItem.y)&&!occupied(hoverTile[0],hoverTile[1],w,d,dragItem)){dragItem.x=hoverTile[0];dragItem.y=hoverTile[1];changed()}}
+ dragItem=null; draw();
+});
+cv.addEventListener("dragover",e=>{e.preventDefault();const r=cv.getBoundingClientRect();hoverTile=toTile(e.clientX-r.left,e.clientY-r.top);draw()});
+cv.addEventListener("dragleave",()=>{hoverTile=null;draw()});
+cv.addEventListener("drop",e=>{e.preventDefault();if(!dragNew)return;const [w,d]=fp(dragNew);
+ if(!occupied(hoverTile[0],hoverTile[1],w,d)){const it=Object.assign({},dragNew,{id:S.uid++,x:hoverTile[0],y:hoverTile[1]});S.placed.push(it);S.sel=it;inspect();changed();toast(itemName(it)+" placed")}
+ else toast("No room there");dragNew=null;draw()});
+window.addEventListener("keydown",e=>{if((e.key==="Delete"||e.key==="Backspace")&&S.sel&&document.activeElement.tagName!=="INPUT"){removeSel()}});
+function removeSel(){S.placed=S.placed.filter(p=>p!==S.sel);S.sel=null;inspect();changed()}
+function itemName(it){if(it.kind==="b")return CAT[it.type].name;if(it.kind==="gen")return it.kw+" kW generator";if(it.kind==="pv")return "Solar array 10 kW";return it.kwh+" kWh battery"}
+
+// palette
+function buildPalette(){
+ const P=$("palette"); P.textContent="";
+ const add=(title)=>{const h=document.createElement("h3");h.textContent=title;P.appendChild(h)};
+ const card=(ic,col,nm,sub,proto)=>{const c=document.createElement("div");c.className="card";c.draggable=true;
+  c.innerHTML=`<div class="ic" style="background:${col}">${ic}</div><div class="nm">${nm}<small>${sub}</small></div>`;
+  c.addEventListener("dragstart",e=>{dragNew=proto;e.dataTransfer.setData("text","x")});P.appendChild(c)};
+ add("Buildings");
+ for(const [k,c] of Object.entries(CAT)){const kw=c.items.reduce((a,i)=>a+i[2],0)+c.hv;card(c.ic,c.col,c.name,`~${fmt(kw,1)} kW peak`,{kind:"b",type:k})}
+ add("Generators");
+ LIB.gens.forEach(g=>card(POWER.gen.ic,POWER.gen.col,g.name+" generator",`${g.src}`,{kind:"gen",kw:g.kw,name:g.name}));
+ add("Solar and storage");
+ card(POWER.pv.ic,POWER.pv.col,"Solar array","10 kW block, 2x2 tiles",{kind:"pv"});
+ LIB.bats.forEach(b=>card(POWER.bat.ic,POWER.bat.col,b.name+" battery",b.src,{kind:"bat",kwh:b.kwh,name:b.name}));
+ const p=document.createElement("p");p.className="note";p.innerHTML="Drag onto the map. Click to inspect, drag to move, Delete to remove. * = already on site.";P.appendChild(p);
+}
+function inspect(){
+ const el=$("insp"); const it=S.sel; if(!it){el.style.display="none";return}
+ el.style.display="block"; let h=`<h4>${itemName(it)}</h4>`;
+ if(it.kind==="b"){const c=CAT[it.type];h+="<table>";c.items.forEach((i,ix)=>{const tr=tierOf(it.type,ix);h+=`<tr><td>${i[0]}</td><td><span class="pill t${tr+1}">T${tr+1}</span></td><td>${i[2]} kW</td></tr>`});
+  if(c.hv) h+=`<tr><td>HVAC (at full load)</td><td><span class="pill t${tierOf(it.type,"hv")+1}">T${tierOf(it.type,"hv")+1}</span></td><td>${fmt(c.hv*shelterF(),1)} kW</td></tr>`;
+  h+="</table>"+(c.est?'<p class="est">Power numbers are planning estimates - replace with sourced figures.</p>':"")+(c.src?`<p class="src">${SRC[c.src]}</p>`:"")}
+ if(it.kind==="gen"){const g=LIB.gens.find(g=>g.kw===it.kw);h+=`<p class="note">Fuel: ${g.b} gal/kWh &times; output + ${g.c} gal/h idle. Cost ${money(g.cost)} (${g.src}).</p><label class="note"><input type="checkbox" id="ownChk" ${it.owned?"checked":""}> already on site (no purchase cost)</label>`}
+ if(it.kind==="bat"){h+=`<p class="note">Li-ion bank (A123 parameters, paper Table 3). The model uses one bank: the largest placed.</p><label class="note"><input type="checkbox" id="ownChk" ${it.owned?"checked":""}> already on site</label>`}
+ if(it.kind==="pv"){h+=`<p class="note">10 &times; 1-kW panels, fixed tilt. Shading or dust lowers output.</p><label class="note"><input type="checkbox" id="ownChk" ${it.owned?"checked":""}> already on site</label>`}
+ h+=`<div style="margin-top:8px"><button class="small" id="delBtn">Remove</button></div>`;
+ el.innerHTML=h; $("delBtn").onclick=removeSel; const oc=$("ownChk"); if(oc) oc.onchange=()=>{it.owned=oc.checked;changed();draw()};
+}
+
+// ======================= tiers =======================
+function tierOf(type,ix){const k=type+":"+ix; if(k in S.tierOv) return S.tierOv[k]; const c=CAT[type]; return ix==="hv"?c.hvTier:c.items[ix][1]}
+function itemTiers(it){const c=CAT[it.type];const t=c.items.map((_,i)=>tierOf(it.type,i));if(c.hv)t.push(tierOf(it.type,"hv"));return t}
+function renderTiers(){
+ for(let t=0;t<3;t++){const el=$("tl"+t);el.textContent=""}
+ const counts={}; S.placed.filter(p=>p.kind==="b").forEach(p=>counts[p.type]=(counts[p.type]||0)+1);
+ for(const [type,n] of Object.entries(counts)){const c=CAT[type];
+  const add=(ix,label,kw)=>{const tr=tierOf(type,ix);const ch=document.createElement("span");ch.className="chip";ch.draggable=true;
+   ch.innerHTML=`${label} <b>${n}&times;${fmt(kw,1)}kW</b>`;ch.title=c.name;
+   ch.addEventListener("dragstart",e=>{e.dataTransfer.setData("text",type+":"+ix)});$("tl"+tr).appendChild(ch)};
+  c.items.forEach((i,ix)=>add(ix,i[0]+" ("+c.name.split(" (")[0]+")",i[2])); if(c.hv) add("hv","HVAC ("+c.name.split(" (")[0]+")",c.hv*shelterF());
+ }
+ if(S.tierLoads) for(let t=0;t<3;t++) $("t"+(t+1)+"kw").textContent=`peak ${fmt(Math.max(...S.tierLoads[t]),0)} kW`;
+}
+document.querySelectorAll(".tierlist").forEach(el=>{el.addEventListener("dragover",e=>e.preventDefault());
+ el.addEventListener("drop",e=>{e.preventDefault();const k=e.dataTransfer.getData("text");if(!k.includes(":"))return;S.tierOv[k]=+el.dataset.tier;changed()})});
+
+// ======================= loads, PV from climate =======================
+function shelterF(){return (S.type==="exist"||stdKey()==="semi")?0.5:1.0} // insulated hard shelters: see SRC.bill
+function hvacAdj(T){const b=biomeKey();const f=hvacFrac(T);return b==="jungle"?Math.max(f,0.35):b==="desert"?f*1.1:f} // region kit (estimate)
+function prof(p,h){if(p==="flat")return 1;if(p==="day")return (h>=7&&h<19)?1:0.25;if(p==="night")return (h>=18||h<7)?1:0.1;if(p==="evening")return (h>=17&&h<23)?1:(h>=6&&h<8?0.6:0.2);return 1}
+function hvacFrac(T){ // fraction of full HVAC load: cooling above 24C, heating below 12C (electric ECU heat)
+ return Math.min(1.2, Math.max(0,(T-22)/16) + Math.max(0,(12-T)/22)*0.8) + 0.08}
+function buildInputs(){
+ const C=S.climate; const D=S.days; const T=4*D*24;
+ const tl=[new Array(T).fill(0),new Array(T).fill(0),new Array(T).fill(0)], pv=new Array(T).fill(0);
+ const surge=+$("surge").value, storm=+$("storm").value, soil=+$("soil").value;
+ const bs=S.placed.filter(p=>p.kind==="b"); const initStd=stdKey()==="initial";
+ // distribution loss from cable runs: average tile distance from power yard to loads
+ const loss = distLoss();
+ for(let s=0;s<4;s++)for(let d=0;d<D;d++){const day=C?C.seasons[s][d%C.seasons[s].length]:null;
+  for(let h=0;h<24;h++){const t=(s*D+d)*24+h; const Ta=day?day.temp[h]:25; const G=day?day.ghi[h]:0;
+   for(const b of bs){const c=CAT[b.type];c.items.forEach((i,ix)=>{let kw=i[2]*prof(i[3],h); if(b.type==="aid"||b.type==="toc") kw*=1+surge; if(b.type==="dfac"&&ix===0&&initStd) kw*=0.35; tl[tierOf(b.type,ix)][t]+=kw});
+    if(c.hv){let kw=c.hv*shelterF()*hvacAdj(Ta); if(b.type==="aid"||b.type==="toc") kw*=1+surge*0.5; tl[tierOf(b.type,"hv")][t]+=kw}}
+   for(let i=0;i<3;i++) tl[i][t]=+(tl[i][t]*(1+loss)).toFixed(3);
+   const Tc=Ta+G/800*25; pv[t]=+Math.max(0,G/1000*0.86*(1-soil)*storm*(1-0.0037*(Tc-25))*shadeFactor()).toFixed(4);
+  }}
+ S.tierLoads=tl;
+ const weight=(S.months*30.4/4)/D; // hours represented per sample hour
+ const fuelCost = $("fuelOverride").checked ? +$("fuelCost").value : blendedFBCF();
+ const gens=LIB.gens.map(g=>Object.assign({},g,{owned:S.placed.filter(p=>p.kind==="gen"&&p.kw===g.kw&&p.owned).length}));
+ gens.forEach(g=>g.max_count=Math.max(g.max_count,g.owned));
+ const bats=LIB.bats.map(b=>Object.assign({},b,{owned:S.placed.some(p=>p.kind==="bat"&&p.kwh===b.kwh&&p.owned)}));
+ const pvOwned=S.placed.filter(p=>p.kind==="pv"&&p.owned).length*10;
+ const gridOn=S.type==="exist"&&$("gridOn").checked;
+ return {tier_loads:tl, pv_per_kw:pv, weights:new Array(T).fill(weight), block_len:24, fuel_cost:fuelCost,
+  overage:+$("overage").value, spin:+$("spin").value, tier_penalty:[100000,+$("pen2").value,+$("pen3").value],
+  allow_shed:[false,true,true], cycle_cost:1, generators:gens, batteries:bats,
+  pv:{cost:+$("pvCost").value, max_panels:Math.max(pvOwned,+$("pvMax").value), owned:pvOwned},
+  grid:{enabled:gridOn, price:+$("gridPrice").value, max_kw:+$("gridKw").value, avail:gridAvail(T)},
+  n_plus_1:$("nplus1").checked, time_limit_each:20};
+}
+function gridAvail(T){const rel=+$("gridRel").value;const a=[];let seed=7;for(let t=0;t<T;t++){seed=(seed*16807)%2147483647;a.push(((seed%1000)/1000)<rel?1:0)}return a}
+function designFromMap(){
+ const gens={}; S.placed.filter(p=>p.kind==="gen").forEach(p=>{const g=LIB.gens.find(x=>x.kw===p.kw);gens[g.name]=(gens[g.name]||0)+1});
+ if($("genFail").checked){const big=S.placed.filter(p=>p.kind==="gen").sort((a,b)=>b.kw-a.kw)[0];if(big){const n=LIB.gens.find(x=>x.kw===big.kw).name;gens[n]--; if(!gens[n])delete gens[n]}}
+ const bats=S.placed.filter(p=>p.kind==="bat").sort((a,b)=>b.kwh-a.kwh);
+ return {generators:Object.entries(gens).map(([name,count])=>({name,count,kw:LIB.gens.find(g=>g.name===name).kw})),
+  battery: bats.length?{name:LIB.bats.find(b=>b.kwh===bats[0].kwh).name,kwh:bats[0].kwh}:null,
+  pv_kw:S.placed.filter(p=>p.kind==="pv").length*10};
+}
+function powerYard(){const pw=S.placed.filter(p=>p.kind==="gen"||p.kind==="bat");if(!pw.length)return null;return [pw.reduce((a,p)=>a+p.x,0)/pw.length,pw.reduce((a,p)=>a+p.y,0)/pw.length]}
+function distLoss(){const y=powerYard();if(!y)return 0;const bs=S.placed.filter(p=>p.kind==="b");if(!bs.length)return 0;
+ const avg=bs.reduce((a,b)=>a+Math.hypot(b.x-y[0],b.y-y[1]),0)/bs.length;return Math.max(0,(avg-N*0.3)*0.004)}
+function shadeFactor(){ // solar arrays with a tall building directly "south" (x+1..x+3 same rows) lose output
+ const pvs=S.placed.filter(p=>p.kind==="pv");if(!pvs.length)return 1;let shaded=0;
+ for(const p of pvs){if(S.placed.some(o=>o.kind==="b"&&CAT[o.type].h>=20&&o.y<=p.y+1&&o.y+CAT[o.type].d>=p.y&&o.x>p.x+1&&o.x<=p.x+3))shaded++}
+ return 1-0.25*shaded/pvs.length}
+function warnings(){
+ const W=[]; const yard=powerYard(); const loss=distLoss();
+ if(!S.placed.some(p=>p.kind==="gen")) W.push(["No generators placed yet: drag some from the left, or press Optimize.",0]);
+ const sf=shadeFactor(); if(sf<1) W.push([`Some solar arrays sit in the shade of tall buildings (-${fmt((1-sf)*100,0)}% output). Move them clear.`,0]);
+ if(loss>0.005) W.push([`Long cable runs from the power yard: +${fmt(loss*100,1)}% line loss. Put generators near the loads.`,0]);
+ const gens=S.placed.filter(p=>p.kind==="gen"); const bill=S.placed.filter(p=>p.kind==="b"&&p.type==="bill");
+ if(gens.some(g=>bill.some(b=>Math.hypot(g.x-b.x,g.y-b.y)<3))) W.push(["A generator sits within 3 tiles of billeting: noise and exhaust. Move it away.",0]);
+ if(S.sim){ if(S.sim.unserved_kwh[0]>0.5) W.push([`Tier 1 goes dark: ${fmt(S.sim.unserved_kwh[0],0)} kWh unserved. Add capacity.`,0]);
+  else if(S.sim.unserved_kwh[1]>0.5) W.push([`Tier 2 shed: ${fmt(S.sim.unserved_kwh[1],0)} kWh over the period.`,0]);
+  else W.push(["All Tier 1 and Tier 2 loads powered every hour.",1]); }
+ const bad=W.filter(w=>!w[1]).length; S._warns=W;
+ $("warns").innerHTML=S.warnOpen?W.map(w=>`<div class="warn ${w[1]?"good":""}">${w[0]}</div>`).join("")+'<div class="warn good" style="text-align:center;cursor:pointer">hide</div>'
+  :`<div class="warn ${bad?"":"good"}" style="cursor:pointer;align-self:flex-end">${bad?`&#9888; ${bad} layout note${bad>1?"s":""}`:"&#10003; layout OK"}</div>`;
+}
+
+// ======================= templates =======================
+function stdKey(){return S.months<=6?"initial":S.months<=24?"temporary":"semi"}
+const STD={initial:{name:"Initial (0-6 months)",note:"Tents, field kitchen (fuel-fired cooking, little electric load), no laundry or MWR."},
+ temporary:{name:"Temporary (6-24 months)",note:"Force Provider style: TEMPER tents with ECUs, dining facility, containerized latrines, showers and laundry; MWR for a BN."},
+ semi:{name:"Semi-permanent (24+ months)",note:"CHUs and insulated hard buildings (about half the HVAC load), MWR and gym for all."}};
+function template(keepPower){
+ const size=S.size, pax=S.pax, std=stdKey(), bk=biomeKey();
+ const newN = pax>400?50:(pax>220?38:28);
+ const power=(keepPower&&newN===N)?S.placed.filter(p=>p.kind!=="b"):[];
+ S.placed=power; S.sel=null; if(!keepPower) S.opt=null;
+ N = newN; resize();
+ const want=[];
+ for(const [k,c] of Object.entries(CAT)){
+  let n = c.perPax ? Math.max(c.min??1, Math.ceil(pax/c.perPax)) : (size==="BN"?c.bn:c.co);
+  if(k==="bill") n=Math.ceil(pax/20);
+  if(k==="mwr") n=(std==="semi"||(std==="temporary"&&size==="BN"))?Math.max(1,Math.ceil(pax/c.perPax)):0; // see SRC.mwr
+  if(k==="laun"&&std==="initial") n=0;
+  if(c.region&&c.region!==bk) n=0;           // region add-ons only where they apply
+  if(k==="rowpu"&&bk==="jungle") n+=1;       // jungle kit: extra water purification (estimate)
+  for(let i=0;i<n;i++) want.push({kind:"b",type:k});
+ }
+ // place: HLZ in the back corner, TOC/comms/aid centre, towers on corners and beside the gate, billeting rows
+ const order=["toc","comms","aid","cuas","dfac","maint","vheat","hyg","latr","laun","rowpu","drain","fuel","mwr","bill"];
+ want.sort((a,b)=>order.indexOf(a.type)-order.indexOf(b.type));
+ const gx=Math.floor(N/2);
+ const towers=want.filter(w=>w.type==="fp"), hlzs=want.filter(w=>w.type==="hlz"); const rest=want.filter(w=>w.type!=="fp"&&w.type!=="hlz");
+ const corners=[[1,1],[N-2,1],[1,N-2],[N-2,N-2],[gx+2,N-2],[gx-2,N-2],[1,gx],[N-2,gx]];
+ towers.forEach((t,i)=>{const c=corners[i%corners.length];if(!occupied(c[0],c[1],1,1))S.placed.push(Object.assign(t,{id:S.uid++,x:c[0],y:c[1]}))});
+ hlzs.forEach((h,i)=>{for(let s=3;s<N;s++){const x=3+i*5,y=3; if(!occupied(x,y,3,3)){S.placed.push(Object.assign(h,{id:S.uid++,x,y}));break}}});
+ const onRoad=(x,y,w,d)=>x<=gx&&x+w>gx&&y+d>gx-1; // keep the gate road clear
+ for(const it of rest){const [w,d]=fp(it);let done=false;
+  for(let r=0;r<N&&!done;r++)for(let y=3;y<N-3&&!done;y+=1)for(let x=3;x<N-3-6&&!done;x+=1){ // keep the right strip for the power yard
+   if(Math.max(Math.abs(x-N/2+4),Math.abs(y-N/2))>r) continue;
+   if(!onRoad(x,y,w,d)&&!occupied(x,y,w,d)&&!occupied(x-1,y-1,w+2,d+2)) {S.placed.push(Object.assign(it,{id:S.uid++,x,y}));done=true}
+  }}
+ if(S.type==="exist"&&!S.placed.some(p=>p.kind==="gen"&&p.owned)){ // existing FOB: two 100 kW generators already on site
+  placePower({kind:"gen",kw:100,owned:true});placePower({kind:"gen",kw:100,owned:true});
+ }
+ S._std=std; S._biomeBuilt=bk; renderKitNote(); changed();
+}
+function renderKitNote(){
+ const std=stdKey(), bk=biomeKey(); const add={jungle:"extra water purification, drainage pumps, ECUs run all day to dehumidify",arctic:"vehicle warming tents, electric heat in tents",desert:"+10% air-conditioning for dust-clogged filters",mountain:"none beyond cold-night heating (thin air derates generators: not modeled yet)",temperate:"none"}[bk];
+ if($("stdBadge")) $("stdBadge").textContent="Standard: "+STD[std].name.split(" (")[0];
+ if($("kitNote")) $("kitNote").innerHTML=`<b>Build standard:</b> ${STD[std].name}. ${STD[std].note}<br><b>Region kit (${BIOMES[bk].name}):</b> ${add}.`;
+}
+function placePower(proto){const it=Object.assign({},proto);const [w,d]=fp(it);
+ // generators and batteries: closest free spot to the centre of the loads; solar: far edge, out of the shade
+ const bs=S.placed.filter(p=>p.kind==="b"); const cxL=bs.reduce((a,b)=>a+b.x,0)/Math.max(1,bs.length), cyL=bs.reduce((a,b)=>a+b.y,0)/Math.max(1,bs.length);
+ let best=null,bd=1e9;
+ for(let x=1;x<N-1;x++)for(let y=1;y<N-1;y++){ if(occupied(x,y,w,d))continue;
+  let score;
+  if(it.kind==="pv"){ score=-(x+y)*0.01 - (S.placed.some(o=>o.kind==="b"&&CAT[o.type].h>=20&&Math.abs(o.y-y)<=2&&o.x>x&&o.x<=x+4)?-50:0) + (N-x)*0.5; }
+  else { if(occupied(x-1,y-1,w+2,d+2)&&!S.placed.some(o=>(o.kind==="gen"||o.kind==="bat")&&Math.abs(o.x-x)<4&&Math.abs(o.y-y)<4)) continue;
+   const nearBill=S.placed.some(o=>o.kind==="b"&&o.type==="bill"&&Math.hypot(o.x-x,o.y-y)<3.5); score=Math.hypot(x-cxL,y-cyL)+(nearBill?20:0); }
+  if(score<bd){bd=score;best=[x,y]} }
+ if(!best) return false; S.placed.push(Object.assign(it,{id:S.uid++,x:best[0],y:best[1]})); return true}
+function applyDesign(des){
+ S.placed=S.placed.filter(p=>p.kind==="b"||p.owned);
+ for(const g of des.generators){const owned=S.placed.filter(p=>p.kind==="gen"&&p.kw===g.kw&&p.owned).length;for(let i=owned;i<g.count;i++)placePower({kind:"gen",kw:g.kw})}
+ if(des.battery&&!S.placed.some(p=>p.kind==="bat"&&p.owned)) placePower({kind:"bat",kwh:des.battery.kwh});
+ const pvOwned=S.placed.filter(p=>p.kind==="pv").length; for(let i=pvOwned;i<Math.round(des.pv_kw/10);i++) if(!placePower({kind:"pv"})) {toast("Ran out of room for solar");break}
+ changed();
+}
+
+// ======================= evaluation loop =======================
+let evalTimer=null, evalSeq=0;
+function changed(){renderTiers();clearTimeout(evalTimer);evalTimer=setTimeout(evaluate,250);draw()}
+async function evaluate(){
+ if(!S.climate) return;
+ const inp=buildInputs(); renderDemand(); renderTiers();
+ if(!SERVER){warnings();return}
+ const seq=++evalSeq;
+ try{const r=await api("/api/evaluate",{inp,design:designFromMap()}); if(seq!==evalSeq)return;
+  if(!r.ok){toast("Evaluate failed: "+r.message);return}
+  S.sim=r.result; S.inp=inp; updateAll();
+ }catch(e){SERVER=false;ping()}
+}
+function currentSeries(){ if(S.dispMode==="opt"&&S.opt&&S.opt.dispatch) return S.opt.dispatch; return S.sim?S.sim.series:null }
+function updateAll(){ warnings(); kpis(); renderDispatch(); renderPace(); renderResupply(); renderWhatIf(); buildCampaign(); draw(); }
+function hoursTotal(){return S.months*30.4*24}
+function kpis(){
+ const r=S.sim; if(!r) return;
+ $("kTotal").textContent=money(r.total);
+ const days=S.months*30.4; $("kFuel").textContent=fmt(r.fuel_gal/days,0)+" gal";
+ const loadKwh=S.inp.tier_loads.reduce((a,row)=>a+row.reduce((x,y)=>x+y,0),0)*S.inp.weights[0];
+ const pvKwh=r.series.pv.reduce((a,b)=>a+b,0)*S.inp.weights[0]; $("kRen").textContent=fmt(pvKwh/Math.max(1,loadKwh)*100,0)+"%";
+ const t1=S.inp.tier_loads[0].reduce((a,b)=>a+b,0)*S.inp.weights[0]; const ok=1-r.unserved_kwh[0]/Math.max(1,t1);
+ $("kT1").textContent=fmt(ok*100,1)+"%"; $("kT1").style.color=ok>0.9999?"var(--ok)":"var(--bad)";
+ const rs=resupplyCalc(); $("kConv").textContent=fmt(rs.convoysPerMonth,1);
+ renderCalib();
+}
+function renderCalib(){
+ const r=S.sim; if(!r||!S.tierLoads) return; const c=S.pax>=400?CALIB.bn:CALIB.co; const scale=S.pax/c.pax;
+ const tot=S.tierLoads[0].map((v,i)=>v+S.tierLoads[1][i]+S.tierLoads[2][i]); const avg=tot.reduce((a,b)=>a+b,0)/tot.length, pk=Math.max(...tot);
+ const fuelDay=r.fuel_gal/(S.months*30.4);
+ let h=`<table class="t"><tr><th></th><th>This FOB (${S.pax} pax)</th><th>PNNL ${c.pax}-Soldier camp</th></tr>
+  <tr><td>Generators</td><td>${designFromMap().generators.map(g=>g.count+"×"+g.kw+" kW").join(" + ")||"none"}</td><td>${c.gens}; microgrid option ${c.micro}</td></tr>
+  <tr><td>Average / peak load</td><td>${fmt(avg,0)} / ${fmt(pk,0)} kW (${fmt(avg/S.pax,2)} kW per person avg)</td><td>battery "silent run" of a reduced 100 kW camp load (150-Soldier)</td></tr>`;
+ if(c.galBase) h+=`<tr><td>Fuel per day</td><td><b>${fmt(fuelDay,0)} gal</b> (${fmt(fuelDay/S.pax,2)} gal per person)</td><td>${fmt(c.galBase*scale,0)} gal spot generation, ${fmt(c.galMicro*scale,0)} gal microgrid + battery + PV${scale!==1?` (scaled ×${fmt(scale,2)} from 150)`:""}</td></tr>`;
+ h+=`</table><p class="src">PNNL-23133 (2014), SAGE: ${c.note}. A Natick report describes five 60 kW generators at 50% load for a 300-person base, which implies about 0.5 kW per person on average. Different climate, season and equipment, so expect the same order of magnitude, not a match.</p>`;
+ $("calibOut").innerHTML=h;
+}
+
+// ======================= charts =======================
+Chart.defaults.color="#9aaba1"; Chart.defaults.borderColor="#2f3d35"; Chart.defaults.font.size=11;
+const charts={};
+function chart(id,cfg){if(charts[id]){charts[id].data=cfg.data;charts[id].options=cfg.options||charts[id].options;charts[id].update("none");return}charts[id]=new Chart($(id),cfg)}
+function hourLabels(n){return Array.from({length:n},(_,i)=>i%24===0?("D"+(Math.floor(i/24)+1)):(i%6===0?(i%24)+"h":""))}
+function seasonSlice(arr){const D=S.days;const a=S.season*D*24;return arr.slice(a,a+D*24)}
+function renderDemand(){
+ if(!S.tierLoads) return; const L=seasonSlice.bind(null);
+ chart("chDemand",{type:"line",data:{labels:hourLabels(S.days*24),datasets:[0,1,2].map(i=>({label:"Tier "+(i+1),data:L(S.tierLoads[i]),fill:true,backgroundColor:["#e0574f88","#d9a44188","#6d9ed688"][i],borderColor:["#e0574f","#d9a441","#6d9ed6"][i],pointRadius:0,borderWidth:1}))},
+  options:{animation:false,scales:{y:{stacked:true,title:{display:true,text:"kW"}},x:{ticks:{autoSkip:false,maxRotation:0}}},plugins:{legend:{position:"bottom"},title:{display:true,text:["Winter","Spring","Summer","Fall"][S.season]+" sample days"}}}});
+ // load table
+ let h='<table class="t"><tr><th>Building</th><th>Count</th><th>Peak kW each</th><th></th></tr>';
+ const counts={}; S.placed.filter(p=>p.kind==="b").forEach(p=>counts[p.type]=(counts[p.type]||0)+1);
+ for(const [k,n] of Object.entries(counts)){const c=CAT[k];h+=`<tr><td>${c.name}</td><td>${n}</td><td>${fmt(c.items.reduce((a,i)=>a+i[2],0)+c.hv*shelterF(),1)}</td><td>${c.est?'<span class="est">estimate</span>':""}</td></tr>`}
+ $("loadTable").innerHTML=h+"</table>";
+}
+function renderDispatch(){
+ const ser=currentSeries(); if(!ser||!S.inp) return;
+ const n=S.days*24, L=seasonSlice; const load=L(S.inp.tier_loads[0].map((v,i)=>v+S.inp.tier_loads[1][i]+S.inp.tier_loads[2][i]));
+ const ds=[["Solar used",ser.pv,"#f2c94c"],["Generators",ser.gen,"#e07a3f"],["Battery out",ser.bat_out,"#4fb6c9"],["Grid",ser.grid,"#a58be0"]].map(([l,d,c])=>({label:l,data:L(d),fill:true,backgroundColor:c+"cc",borderColor:c,pointRadius:0,borderWidth:1,stack:"s"}));
+ ds.push({label:"Battery charging",data:L(ser.bat_in).map(v=>-v),fill:true,backgroundColor:"#2e6f7caa",borderColor:"#2e6f7c",pointRadius:0,borderWidth:1,stack:"c"});
+ ds.push({label:"Load",data:load,borderColor:"#fff",borderWidth:2,pointRadius:0,fill:false,stack:"l",type:"line"});
+ chart("chDisp",{type:"line",data:{labels:hourLabels(n),datasets:ds},options:{animation:false,scales:{y:{stacked:true,title:{display:true,text:"kW"}},x:{ticks:{autoSkip:false,maxRotation:0}}},plugins:{legend:{position:"bottom",labels:{boxWidth:10}}}}});
+ chart("chSoc",{type:"line",data:{labels:hourLabels(n),datasets:[{label:"Battery state of charge",data:L(ser.soc).map(v=>v*100),borderColor:"#4fb6c9",pointRadius:0,borderWidth:2}]},options:{animation:false,scales:{y:{min:0,max:100,title:{display:true,text:"%"}},x:{ticks:{autoSkip:false,maxRotation:0}}},plugins:{legend:{display:false}}}});
+ $("dispSrc").textContent=S.dispMode==="opt"?"(MILP dispatch, model U)":"(nonlinear simulation of your layout)";
+ const w=S.inp.weights[0]; const sum=a=>a.reduce((x,y)=>x+y,0)*w;
+ const tot=sum(ser.pv)+sum(ser.gen)+sum(ser.bat_out)+sum(ser.grid);
+ $("energySplit").innerHTML=[["Solar",sum(ser.pv)],["Generators",sum(ser.gen)],["Battery",sum(ser.bat_out)],["Grid",sum(ser.grid)]].map(([k,v])=>`<div class="statbox"><small>${k}</small><b>${fmt(v/1000,0)} MWh</b> <span class="note">${fmt(v/Math.max(1,tot)*100,0)}%</span></div>`).join("");
+}
+
+// ======================= PACE =======================
+function paceRecommend(){
+ const d=designFromMap(); const genKw=d.generators.reduce((a,g)=>a+g.kw*g.count,0); const big=Math.max(0,...d.generators.map(g=>g.kw));
+ const pv=d.pv_kw, bat=d.battery?d.battery.kwh:0; const gridOn=S.type==="exist"&&$("gridOn").checked;
+ const lv=[{src:"Hybrid microgrid: generators + solar + battery"+(gridOn?" + grid":""),kw:genKw+pv*0.6+(gridOn?+$("gridKw").value:0),fuel:true,bat:true}];
+ if(gridOn) lv.push({src:"Host-nation grid + battery (generators standby)",kw:+$("gridKw").value,fuel:false,bat:true});
+ lv.push({src:`Generators only, largest unit down (${genKw-big} kW)`,kw:genKw-big,fuel:true,bat:false});
+ if(bat||pv) lv.push({src:`Battery + solar only (fuel exhausted): ${bat} kWh, ${pv} kW PV`,kw:Math.min(bat*0.5,bat)+pv*0.3,fuel:false,bat:true,energy:bat});
+ lv.push({src:"Emergency: smallest generator / vehicle power, Tier 1 only",kw:Math.min(...(d.generators.length?d.generators.map(g=>g.kw):[0])),fuel:true,bat:false});
+ const peaks=[0,1,2].map(i=>Math.max(...(S.tierLoads?S.tierLoads[i]:[0])));
+ lv.forEach(l=>{let cum=0;l.tiers=[0,1,2].map(i=>{cum+=peaks[i]*(1+(+$("overage").value));return cum<=l.kw+1e-6})});
+ return lv.slice(0,4);
+}
+function renderPace(){
+ if(!S.pace) S.pace=paceRecommend();
+ const fuelDay=S.sim?S.sim.fuel_gal/(S.months*30.4):0; const store=+$("store").value;
+ const tierAvg=[0,1,2].map(i=>S.tierLoads?S.tierLoads[i].reduce((a,b)=>a+b,0)/S.tierLoads[i].length:0);
+ const L="PACE"; let h='<tr><th></th><th>Source</th><th>Powers</th><th>Endurance</th><th></th></tr>';
+ S.pace.forEach((l,i)=>{
+  const load=tierAvg.reduce((a,v,j)=>a+(l.tiers[j]?v:0),0);
+  const fullLoad=tierAvg.reduce((a,b)=>a+b,0);
+  let end="-"; if(l.fuel&&fuelDay>0) end=fmt(store/(fuelDay*load/Math.max(1e-6,fullLoad)),1)+" days of fuel";
+  else if(l.energy) end=fmt(l.energy*0.9/Math.max(0.1,load),1)+" h on battery (+ solar by day)";
+  else if(!l.fuel) end="while grid is up";
+  h+=`<tr><td>${L[i]}</td><td>${l.src}<div class="note">${fmt(l.kw,0)} kW available</div></td><td>${[0,1,2].map(j=>`<span class="pill t${j+1}" style="cursor:pointer;opacity:${l.tiers[j]?1:.25}" data-l="${i}" data-j="${j}">T${j+1}</span>`).join("")}</td><td>${end}</td>
+   <td><button class="small" data-up="${i}">&uarr;</button><button class="small" data-dn="${i}">&darr;</button></td></tr>`});
+ $("paceTable").innerHTML=h;
+ $("paceTable").querySelectorAll("[data-l]").forEach(p=>p.onclick=()=>{const l=S.pace[+p.dataset.l];l.tiers[+p.dataset.j]=!l.tiers[+p.dataset.j];renderPace();buildCampaign()});
+ $("paceTable").querySelectorAll("[data-up]").forEach(b=>b.onclick=()=>{const i=+b.dataset.up;if(i>0){[S.pace[i-1],S.pace[i]]=[S.pace[i],S.pace[i-1]];renderPace();buildCampaign()}});
+ $("paceTable").querySelectorAll("[data-dn]").forEach(b=>b.onclick=()=>{const i=+b.dataset.dn;if(i<S.pace.length-1){[S.pace[i+1],S.pace[i]]=[S.pace[i],S.pace[i+1]];renderPace();buildCampaign()}});
+ // expenditures
+ if(!S.sim) return; const r=S.sim, w=S.inp.weights[0], days=S.months*30.4, ser=r.series; const sum=a=>a.reduce((x,y)=>x+y,0)*w;
+ const fuelCost=S.inp.fuel_cost; const d=designFromMap();
+ let e='<tr><th>Source</th><th>Energy</th><th>Fuel / day</th><th>Run hours</th><th>Cost over period</th></tr>';
+ e+=`<tr><td>Generators (${d.generators.map(g=>g.count+"&times;"+g.kw+"kW").join(", ")||"none"})</td><td>${fmt(sum(ser.gen)/1000,0)} MWh</td><td>${fmt(r.fuel_gal/days,0)} gal</td><td>${fmt(r.gen_hours,0)} unit-h</td><td>${money(r.fuel_cost)} fuel + ${money(d.generators.reduce((a,g)=>a+LIB.gens.find(x=>x.name===g.name).cost*g.count,0))} buy</td></tr>`;
+ e+=`<tr><td>Solar (${d.pv_kw} kW)</td><td>${fmt(sum(ser.pv)/1000,0)} MWh</td><td>0</td><td>-</td><td>${money(d.pv_kw*S.inp.pv.cost)} buy; ${fmt(r.curtailed_kwh/1000,1)} MWh spilled</td></tr>`;
+ e+=`<tr><td>Battery (${d.battery?d.battery.kwh+" kWh":"none"})</td><td>${fmt(sum(ser.bat_out)/1000,0)} MWh</td><td>0</td><td>${fmt(r.battery_cycles,0)} cycles</td><td>${d.battery?money(LIB.bats.find(b=>b.kwh===d.battery.kwh).cost)+" buy":"-"}</td></tr>`;
+ if(S.inp.grid.enabled) e+=`<tr><td>Host-nation grid</td><td>${fmt(r.grid_kwh/1000,0)} MWh</td><td>0</td><td>-</td><td>${money(r.grid_cost)}</td></tr>`;
+ e+=`<tr><td>Unserved (penalty)</td><td>${r.unserved_kwh.map((u,i)=>"T"+(i+1)+" "+fmt(u,0)).join(", ")} kWh</td><td></td><td></td><td>${money(r.penalty_cost)}</td></tr>`;
+ $("spendTable").innerHTML=e;
+}
+
+// ======================= resupply =======================
+function blendedFBCF(){const tot=MODES.reduce((a,m)=>a+m.share,0)||1;return MODES.reduce((a,m)=>a+m.fbcf*m.share/tot,0)}
+function resupplyCalc(){
+ const fuelMonth=S.sim?S.sim.fuel_gal/S.months:0; const tot=MODES.reduce((a,m)=>a+m.share,0)||1;
+ let trips=0,expo=0,cas=0,conv=0,rel=0; const per=MODES.map(m=>{const gal=fuelMonth*m.share/tot;const n=gal/m.gal;trips+=n;expo+=n*m.exp;cas+=n*m.cas;rel+=m.rel*m.share/tot;if(m.id==="convoy")conv=n;return {m,gal,n}});
+ return {fuelMonth,trips,expo,cas,convoysPerMonth:conv,rel,per,fbcf:blendedFBCF()};
+}
+function buildModeSliders(){
+ $("modeSliders").innerHTML=MODES.map((m,i)=>`<div class="row"><label>${m.name}</label><output id="oMode${i}">${m.share}%</output></div><input type="range" min="0" max="100" value="${m.share}" data-mode="${i}">`).join("");
+ $("modeSliders").querySelectorAll("input").forEach(el=>el.oninput=()=>{MODES[+el.dataset.mode].share=+el.value;$("oMode"+el.dataset.mode).textContent=el.value+"%";syncFuel();changed()});
+ let h='<table class="t"><tr><th>Method</th><th>$/gal</th><th>gal/trip</th><th>soldier-h/trip</th><th>casualties/trip</th><th>reliability</th><th>lead time (h)</th></tr>';
+ MODES.forEach((m,i)=>{h+=`<tr><td>${m.name}<div class="src">${m.src}</div></td>`+["fbcf","gal","exp","cas","rel","lead"].map(k=>`<td><input type="number" step="any" value="${m[k]}" data-m="${i}" data-k="${k}" style="width:58px"></td>`).join("")+"</tr>"});
+ $("modeTable").innerHTML=h+"</table>";
+ $("modeTable").querySelectorAll("input").forEach(el=>el.onchange=()=>{MODES[+el.dataset.m][el.dataset.k]=+el.value;syncFuel();changed()});
+}
+function syncFuel(){if(!$("fuelOverride").checked){$("fuelCost").value=Math.round(blendedFBCF())} $("oFuel").textContent="$"+fmt($("fuelOverride").checked?+$("fuelCost").value:blendedFBCF(),0)}
+function renderResupply(){
+ const r=resupplyCalc(); const store=+$("store").value; const reorder=+$("reorder").value; const perDay=r.fuelMonth/30.4;
+ $("resupOut").innerHTML=[["Fuel per month",fmt(r.fuelMonth,0)+" gal"],["Blended cost",`$${fmt(r.fbcf,0)}/gal`],["Deliveries / month",fmt(r.trips,1)],["Ground convoys / month",fmt(r.convoysPerMonth,1)],
+  ["Soldier-hours exposed / month",fmt(r.expo,0)],["Expected casualties / year",fmt(r.cas*12,2)],["Days between deliveries",fmt(store*(1-reorder)/Math.max(0.01,perDay),1)],["Delivery reliability",fmt(r.rel*100,0)+"%"]]
+  .map(([k,v])=>`<div class="statbox"><small>${k}</small><b>${v}</b></div>`).join("");
+}
+
+// ======================= what-if =======================
+function renderWhatIf(){
+ const cut=+$("cut").value; const r=S.sim; if(!r) return;
+ const perDay=r.fuel_gal/(S.months*30.4); const store=+$("store").value*(+$("reorder").value); // worst case: cut hits at reorder point
+ if(cut>0&&perDay>0){
+  const share=[0,1,2].map(i=>S.tierLoads[i].reduce((a,b)=>a+b,0)); const tot=share.reduce((a,b)=>a+b,0);
+  // shed T3 at 60% of remaining, T2 at 25% (planning rule)
+  let fuel=store, day=0; const seg=[]; let tiers=3;
+  while(day<cut && day<60){const frac=fuel/store; if(frac<0.6&&tiers===3)tiers=2; if(frac<0.25&&tiers===2)tiers=1;
+   const burn=perDay*share.slice(0,tiers).reduce((a,b)=>a+b,0)/tot; if(fuel<=0){seg.push(0)} else {fuel-=burn; seg.push(tiers)} day++}
+  const cols={3:"#5cc690",2:"#d9a441",1:"#e0574f",0:"#333"}; const names={3:"All tiers",2:"T1+T2",1:"T1 only",0:"Fuel out: battery/solar"};
+  const runs=[];seg.forEach(s=>{if(runs.length&&runs[runs.length-1][0]===s)runs[runs.length-1][1]++;else runs.push([s,1])});
+  const out=seg.indexOf(0);
+  $("cutOut").innerHTML=`<div class="timeline">${runs.map(([s,n])=>`<div style="flex:${n};background:${cols[s]}">${names[s]} ${n}d</div>`).join("")}</div>
+   <p class="note">Starting at the reorder point (${fmt(store,0)} gal) burning ${fmt(perDay,0)} gal/day. Rule: shed Tier 3 below 60% of that fuel, Tier 2 below 25%. ${out>=0?`<b style="color:var(--bad)">Fuel runs out on day ${out+1}.</b> After that only the battery and solar carry Tier 1.`:`<b style="color:var(--ok)">Fuel lasts the whole ${cut}-day cut.</b>`}</p>`;
+ } else $("cutOut").textContent="Set a cut length above.";
+ const sh=r.unserved_kwh; $("whatOut").innerHTML=[["Fuel / day",fmt(perDay,0)+" gal"],["Tier 1 unserved",fmt(sh[0],0)+" kWh"],["Tier 2 unserved",fmt(sh[1],0)+" kWh"],["Tier 3 unserved",fmt(sh[2],0)+" kWh"]].map(([k,v])=>`<div class="statbox"><small>${k}</small><b>${v}</b></div>`).join("");
+}
+
+// ======================= optimize =======================
+async function optimize(){
+ if(!SERVER){toast("Start the solver: python server.py");return}
+ const b=$("btnOpt"); b.classList.add("busy"); b.textContent="Optimizing...";
+ try{const inp=buildInputs(); const r=await api("/api/optimize",{inp}); S.opt=r;
+  if(!r.ok){toast(r.message||"No solution");$("optStats").textContent=r.message||"failed";return}
+  renderModel(r); S.dispMode="opt"; document.querySelectorAll("#segDisp button").forEach(x=>x.classList.toggle("on",x.dataset.v==="opt"));
+  const d=r.design; const txt=d.generators.map(g=>g.count+"x"+g.kw+"kW").join(" + ")+(d.battery?" + "+d.battery.kwh+"kWh battery":"")+" + "+d.pv_kw+"kW solar";
+  const bn=$("optBanner"); bn.style.display="block";
+  bn.innerHTML=`<b>Optimal design:</b> ${txt}<br>Total ${money(r.costs.objective)} (model U) vs your layout ${money(S.sim?S.sim.total:null)} (simulated).<div style="margin-top:6px"><button class="small primary" id="obPlace">Place it on the map</button> <button class="small" id="obKeep">Keep my layout</button></div>`;
+  $("obPlace").onclick=()=>{applyDesign(d);S.pace=null;bn.style.display="none";toast("Optimal design placed in the power yard")};
+  $("obKeep").onclick=()=>{bn.style.display="none"};
+  renderDispatch();
+ }catch(e){toast("Optimize failed: "+e)} finally{b.classList.remove("busy");b.textContent="Optimize"}
+}
+function renderModel(r){
+ const c=r.costs, d=r.design;
+ $("optStats").innerHTML=`<div class="grid2">
+  <div class="statbox"><small>Design</small><b>${d.generators.map(g=>g.count+"&times;"+g.kw+"kW").join(" + ")}</b><div>${d.battery?d.battery.kwh+" kWh battery":"no battery"}, ${d.pv_kw} kW solar</div></div>
+  <div class="statbox"><small>Objective (U)</small><b>${money(c.objective)}</b><div>buy ${money(c.capex)}, fuel ${money(c.fuel_cost)}</div></div>
+  <div class="statbox"><small>Fuel over period</small><b>${fmt(c.fuel_gal,0)} gal</b><div>solar share ${fmt(c.renewable_fraction*100,0)}%</div></div>
+  <div class="statbox"><small>Solve</small><b>${r.seconds_total}s</b><div>${r.screened} designs screened; MILP ${r.n_vars} vars, ${r.n_int} integer, ${r.n_cons} rows, gap ${fmt((r.mip_gap||0)*100,1)}%</div></div></div>
+  <p class="note">Heuristic H best: ${money(r.heuristic_best.eval.total)} (nonlinear simulation, myopic). MILP improves on it by ${fmt((r.heuristic_best.eval.total-c.objective)/r.heuristic_best.eval.total*100,1)}%.</p>`;
+ const e=r.approx_error;
+ if(e){$("errStats").innerHTML=`<table class="t">
+  <tr><td>Max over-estimate of battery discharge power (eq. 26)</td><td><b>${e.max_overestimate_discharge_kw} kW</b></td><td class="note">paper: up to 2.8 kW</td></tr>
+  <tr><td>Max under-estimate of charge power (eq. 27)</td><td><b>${e.max_underestimate_charge_kw} kW</b></td><td class="note">paper: up to 1 kW</td></tr>
+  <tr><td>Net energy error, % of demand (eq. 28)</td><td><b>${e.net_energy_error_pct_of_demand}%</b></td><td class="note">paper: &lt; 0.02%</td></tr>
+  <tr><td>Battery aging: nonlinear / linear (eq. 29)</td><td><b>${e.lifecycle_ratio_pct}%</b></td><td class="note">${e.lifecycles_nonlinear} vs ${e.lifecycles_model} cycles</td></tr>
+  <tr><td>Same design re-run with nonlinear physics + myopic dispatch</td><td><b>${fmt(r.nonlinear_check.fuel_gal,0)} gal</b></td><td class="note">MILP: ${fmt(c.fuel_gal,0)} gal (${fmt((r.nonlinear_check.fuel_gal-c.fuel_gal)/Math.max(1,c.fuel_gal)*100,1)}%)</td></tr></table>`;
+  const n=S.days*24;
+  chart("chErr",{type:"line",data:{labels:hourLabels(n),datasets:[{label:"Discharge power error (kW)",data:seasonSlice(e.series_discharge_err),borderColor:"#4fb6c9",pointRadius:0,borderWidth:1.5},{label:"Charge power error (kW)",data:seasonSlice(e.series_charge_err),borderColor:"#e07a3f",pointRadius:0,borderWidth:1.5}]},options:{animation:false,plugins:{legend:{position:"bottom"}},scales:{x:{ticks:{autoSkip:false,maxRotation:0}}}}});
+ } else $("errStats").textContent="The chosen design has no battery, so (U) is exact here: the battery bilinear terms are the only approximation.";
+ $("leader").innerHTML='<table class="t"><tr><th>#</th><th>Design</th><th>Total</th><th>Fuel gal</th></tr>'+r.leaderboard.map((l,i)=>`<tr><td>${i+1}</td><td>${l.design.generators.map(g=>g.count+"&times;"+g.kw).join("+")}kW ${l.design.battery?"| "+l.design.battery.kwh+"kWh":""} | ${l.design.pv_kw}kW PV</td><td>${money(l.total)}</td><td>${fmt(l.fuel_gal,0)}</td></tr>`).join("")+"</table>";
+}
+async function runFull(){
+ if(!SERVER)return; $("fullOut").textContent="Solving (up to 30 s)...";
+ const r=await api("/api/solve_full",{inp:buildInputs(),time_limit:30});
+ if(!r.ok){$("fullOut").textContent="No solution in time: "+(r.message||"");return}
+ const best=S.opt&&S.opt.costs?S.opt.costs.objective:null;
+ $("fullOut").innerHTML=`Full model: ${money(r.costs.objective)} with ${r.design.generators.map(g=>g.count+"x"+g.kw+"kW").join("+")}, ${r.design.battery?r.design.battery.kwh+"kWh":"no battery"}, ${r.design.pv_kw}kW PV. Gap at stop: ${fmt(r.mip_gap*100,1)}% (${r.status}).`+(best?` Screened approach: ${money(best)} (${fmt((best-r.costs.objective)/r.costs.objective*100,1)}% vs full).`:"");
+}
+
+// ======================= site / map =======================
+let MAP, PRESETS=[];
+async function initMap(){
+ MAP=L.map("map",{worldCopyJump:true}).setView([30,30],2);
+ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:8,attribution:"&copy; OpenStreetMap"}).addTo(MAP);
+ try{PRESETS=await (await fetch("data/presets.json")).json()}catch(e){PRESETS=[]}
+ PRESETS.forEach(p=>{L.circleMarker([p.lat,p.lon],{radius:6,color:"#d9a441"}).addTo(MAP).bindTooltip(p.name).on("click",()=>loadPreset(p))});
+ $("presetBtns").innerHTML=PRESETS.map((p,i)=>`<button class="small" data-p="${i}" style="margin:2px">${p.name}</button>`).join("");
+ $("presetBtns").querySelectorAll("button").forEach(b=>b.onclick=()=>loadPreset(PRESETS[+b.dataset.p]));
+ MAP.on("click",e=>loadPoint(e.latlng.lat,e.latlng.lng));
+ if(PRESETS.length) loadPreset(PRESETS[0]);
+}
+let siteMarker=null;
+function setMarker(lat,lon){if(siteMarker)siteMarker.remove();siteMarker=L.circleMarker([lat,lon],{radius:9,color:"#fff",weight:3,fillColor:"#e0574f",fillOpacity:1}).addTo(MAP)}
+async function loadPreset(p){const c=await (await fetch("data/"+p.file)).json();S.siteRef={name:p.name,file:p.file,lat:p.lat,lon:p.lon};setClimate(p.name,c);setMarker(p.lat,p.lon)}
+async function loadPoint(lat,lon){
+ if(!SERVER){toast("Start server.py to pull NASA data for any point");return}
+ toast("Pulling NASA POWER data...");setMarker(lat,lon);
+ const r=await api(`/api/climate?lat=${lat.toFixed(2)}&lon=${lon.toFixed(2)}`);
+ if(!r.ok){toast(r.message);return} S.siteRef={name:`${lat.toFixed(2)}, ${lon.toFixed(2)}`,lat:+lat.toFixed(2),lon:+lon.toFixed(2)}; setClimate(`${lat.toFixed(2)}, ${lon.toFixed(2)}`,r.climate);
+}
+function setClimate(name,c){S.site=name;S.climate=c;$("siteTxt").textContent="Site: "+name;
+ const n=["Winter","Spring","Summer","Fall"];
+ chart("chClimate",{type:"line",data:{labels:Array.from({length:24},(_,h)=>h),datasets:[0,1,2,3].flatMap(s=>[{label:n[s]+" sun (W/m²)",data:c.seasons[s][0].ghi,borderColor:["#6d9ed6","#5cc690","#f2c94c","#e07a3f"][s],pointRadius:0,borderWidth:2,yAxisID:"y"},{label:n[s]+" °C",data:c.seasons[s][0].temp,borderColor:["#6d9ed6","#5cc690","#f2c94c","#e07a3f"][s],borderDash:[4,3],pointRadius:0,borderWidth:1.5,yAxisID:"y2"}])},
+  options:{animation:false,plugins:{legend:{display:false}},scales:{y:{title:{display:true,text:"W/m²"}},y2:{position:"right",title:{display:true,text:"°C"},grid:{display:false}}}}});
+ const T=c.seasons.flatMap(s=>s.flatMap(d=>d.temp)); $("climNote").innerHTML=`Solid = sunlight on a typical day, dashed = temperature. Annual sun ${c.annual_ghi_kwh_m2} kWh/m&sup2;; sample temps ${fmt(Math.min(...T),0)} to ${fmt(Math.max(...T),0)} &deg;C. Source: ${c.source}, ${c.year}.`;
+ S.pace=null; biomeNote();
+ if(S._biomeBuilt&&biomeKey()!==S._biomeBuilt) template(true); else {renderKitNote();changed()}
+}
+
+// ======================= spec sheet =======================
+function buildSpec(){
+ const r=S.sim, o=S.opt, d=designFromMap(), rs=resupplyCalc(); if(!r){toast("Nothing to print yet");return false}
+ const peak=[0,1,2].map(i=>Math.max(...S.tierLoads[i]));
+ const today=new Date().toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});
+ $("spec").innerHTML=`<h1>FOB Hybrid Power Design: Technical Specifications</h1>
+ <div>${S.size} FOB (${S.type==="exp"?"expeditionary":"existing"}), ${S.pax} personnel, ${S.site}; ${S.months}-month operating period &middot; MA481X Project 2 &middot; ${today}</div>
+ <div class="cols"><div>
+ <h2>Recommended design</h2><table><tr><th>Component</th><th>Qty / size</th><th>Buy cost</th></tr>
+ ${d.generators.map(g=>{const L2=LIB.gens.find(x=>x.name===g.name);return `<tr><td>Diesel generator ${g.kw} kW</td><td>${g.count}</td><td>${money(L2.cost*g.count)}</td></tr>`}).join("")}
+ <tr><td>Solar PV (1-kW panels)</td><td>${d.pv_kw} kW</td><td>${money(d.pv_kw*S.inp.pv.cost)}</td></tr>
+ <tr><td>Li-ion battery bank</td><td>${d.battery?d.battery.kwh+" kWh":"none"}</td><td>${d.battery?money(LIB.bats.find(b=>b.kwh===d.battery.kwh).cost):"-"}</td></tr></table>
+ <h2>Results over the period</h2><table>
+ <tr><td>Total cost (buy + fuel + penalties)</td><td>${money(r.total)}</td></tr><tr><td>Fuel</td><td>${fmt(r.fuel_gal,0)} gal (${fmt(r.fuel_gal/(S.months*30.4),0)} gal/day)</td></tr>
+ <tr><td>Solar share of load</td><td>${$("kRen").textContent}</td></tr><tr><td>Tier 1 / 2 / 3 unserved</td><td>${r.unserved_kwh.map(u=>fmt(u,0)).join(" / ")} kWh</td></tr>
+ <tr><td>Deliveries / ground convoys per month</td><td>${fmt(rs.trips,1)} / ${fmt(rs.convoysPerMonth,1)}</td></tr><tr><td>Soldier-hours exposed per month</td><td>${fmt(rs.expo,0)}</td></tr>
+ ${o&&o.approx_error?`<tr><td>Approximation error (vs nonlinear model)</td><td>net energy ${o.approx_error.net_energy_error_pct_of_demand}% of demand; max discharge over-estimate ${o.approx_error.max_overestimate_discharge_kw} kW; battery aging ${o.approx_error.lifecycle_ratio_pct}%</td></tr>`:""}
+ ${o&&o.costs?`<tr><td>Optimizer (model U)</td><td>${money(o.costs.objective)}, gap ${fmt((o.mip_gap||0)*100,1)}%, ${o.screened} designs screened</td></tr>`:""}</table>
+ </div><div>
+ <h2>Demand and tiers</h2><table><tr><th>Tier</th><th>Peak kW</th><th>Contents</th></tr>
+ <tr><td>1</td><td>${fmt(peak[0],0)}</td><td>Comms, critical medical, TOC/C2, SIPR, NIPR, force protection, C-UAS, med refrigeration, pumps</td></tr>
+ <tr><td>2</td><td>${fmt(peak[1],0)}</td><td>Shelter lighting, HVAC, DFAC, hygiene, water, maintenance</td></tr>
+ <tr><td>3</td><td>${fmt(peak[2],0)}</td><td>Personal phones and computers, MWR</td></tr></table>
+ <h2>PACE</h2><table>${(S.pace||[]).map((l,i)=>`<tr><td><b>${"PACE"[i]}</b></td><td>${l.src}</td><td>${l.tiers.map((t,j)=>t?"T"+(j+1):"").join(" ")}</td></tr>`).join("")}</table>
+ <h2>Key assumptions</h2><ul style="margin:2px 0 0 14px;padding:0">
+ <li>Model (U) of Scioletti et al. (2017): linear fuel curves, exact binary&times;current and McCormick SOC&times;current linearization; overage ${S.inp.overage}, spinning reserve ${S.inp.spin}.</li>
+ <li>Fuel at $${fmt(S.inp.fuel_cost,0)}/gal fully burdened (blend of ${MODES.filter(m=>m.share>0).map(m=>m.name+" "+m.share+"%").join(", ")}).</li>
+ <li>Climate: NASA POWER ${S.climate.year} hourly data, ${S.days} sample day(s) per season; PV 14% losses, -0.37%/&deg;C.</li>
+ <li>Lost-power penalties: T1 $100,000/kWh, T2 $${$("pen2").value}/kWh, T3 $${$("pen3").value}/kWh. ${$("nplus1").checked?"N+1 on Tier 1.":""}</li>
+ <li>Building loads are planning estimates pending sourced figures; generator and battery data from paper Tables 2-3.</li></ul>
+ </div></div>`;
+ if($("spec2").checked) $("spec").innerHTML+=appendixHtml();
+ return true;
+}
+
+// ======================= deployment playback (campaign) =======================
+// The whole operating period is stitched from the sample days: day d of the deployment uses season
+// (start + d / 91.3 days) and sample day (d mod days-per-season). Fuel, deliveries, delays and strikes run on top.
+const SEASONS=["Winter","Spring","Summer","Fall"];
+function campIdx(h){const D=S.days;const d=Math.floor(h/24);const s=(S.startSeason+Math.floor(d/91.3125))%4;const di=d%D;const hr=((h%24)+24)%24;return [s,di,hr,s*D*24+di*24+hr,d]}
+function rngOf(seed){let a=seed>>>0;return ()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296}}
+function fmtDur(h){h=Math.max(0,Math.round(h));const d=Math.floor(h/24);return (d?d+"d ":"")+(h%24)+"h"}
+function stamp(h){const d=Math.floor(h/24);return `D+${d} ${String(Math.floor(h%24)).padStart(2,"0")}00`}
+function shedOf(ser,i,t){return ((ser.shed?ser.shed[i][t]:(ser.unserved?ser.unserved[i][t]:0))||0)}
+function buildCampaign(){
+ const ser=currentSeries(); if(!ser||!S.inp||!ser.fuel_gal||!S.tierLoads){S.camp=null;renderHud();return}
+ const H=Math.max(24,Math.round(S.months*30.4*24)); const store=+$("store").value, rl=store*(+$("reorder").value);
+ const rnd=rngOf(S.seed);
+ const cut=+$("cut").value, cutS=(+$("cutStart").value)*24, cutE=cutS+cut*24;
+ const des=designFromMap(); const genKw=des.generators.reduce((a,g)=>a+g.kw*g.count,0);
+ const pvs=S.placed.filter(p=>p.kind==="pv"); const batKwh=des.battery?des.battery.kwh:0;
+ // ---- threat: Poisson number of strikes over the period
+ const lam=(+$("threat").value)*S.months; let nStr=0; if(lam>0){const Lm=Math.exp(-lam);let p=1;do{nStr++;p*=rnd()}while(p>Lm);nStr--}
+ const hasCuas=S.placed.some(p=>p.kind==="b"&&p.type==="cuas");
+ const tg=S.placed.map(p=>[p,p.kind==="gen"?3:p.kind==="pv"?2:p.kind==="bat"?2:0.4]); const tw=tg.reduce((a,x)=>a+x[1],0);
+ const strikes=[];
+ for(let i=0;i<nStr&&tw>0;i++){const h=24+Math.floor(rnd()*(H-24)); const kind=rnd()<0.55?"IDF":"UAS"; const icp=kind==="UAS"&&hasCuas&&rnd()<0.7;
+  let r=rnd()*tw, it=tg[0][0]; for(const [p,w] of tg){r-=w;if(r<=0){it=p;break}}
+  const rep=it.kind==="gen"?24+rnd()*48:it.kind==="pv"?48+rnd()*120:it.kind==="bat"?48+rnd()*72:12+rnd()*24;
+  strikes.push({h,kind,icp,id:it.id,tkind:it.kind,name:itemName(it),h1:h+Math.round(rep),x:it.x+fp(it)[0]/2,y:it.y+fp(it)[1]/2})}
+ strikes.sort((a,b)=>a.h-b.h);
+ const outages=strikes.filter(s=>!s.icp).map(s=>({id:s.id,kind:s.tkind,h0:s.h,h1:s.h1}));
+ const ev=[];
+ strikes.forEach(s=>{ev.push({h:s.h,type:"strike",s,txt:s.icp?`${s.kind} drone shot down by counter-UAS`:`${s.kind==="IDF"?"Indirect fire":"UAS strike"} hits ${s.name}: down ~${fmtDur(s.h1-s.h)}`});
+  if(!s.icp) ev.push({h:s.h1,type:"info",txt:`${s.name} repaired and back on line`})});
+ // ---- hour by hour
+ const level=new Float32Array(H), extra=[new Float32Array(H),new Float32Array(H),new Float32Array(H)], fuelOut=new Uint8Array(H), paceLv=new Uint8Array(H);
+ const burnH=new Float32Array(H), genH=new Float32Array(H), pvH=new Float32Array(H), batH=new Float32Array(H), gridH=new Float32Array(H), unsH=new Float32Array(H), penH=new Float64Array(H);
+ if(!S.pace) S.pace=paceRecommend(); const PACE=S.pace; const auto=$("paceAuto").checked, pA=+$("paceA").value, pC=Math.min(pA,+$("paceC").value), pE=Math.min(pC,+$("paceE").value);
+ let outLv=PACE.findIndex(l=>l.energy); if(outLv<0) outLv=PACE.length-1; let prevPl=0;
+ const tot=MODES.reduce((a,m)=>a+m.share,0); const cnt=MODES.map(()=>0); const orders=[];
+ let lvl=store, order=null, nOrd=0, batE=0, prevOut=false, deliveries=0, late=0, expo=0, cas=0, outH=0, unservedT1=0;
+ const shedOn=[false,false], lastEnd=[-99,-99];
+ for(let h=0;h<H;h++){
+  const t=campIdx(h)[3]; const loads=[0,1,2].map(i=>S.tierLoads[i][t]||0);
+  let downKw=0,pvDown=0,batDown=false;
+  for(const o of outages){ if(h<o.h0||h>=o.h1) continue; const it=S.placed.find(p=>p.id===o.id); if(!it) continue;
+   if(o.kind==="gen")downKw+=it.kw; else if(o.kind==="pv")pvDown+=1/Math.max(1,pvs.length); else if(o.kind==="bat")batDown=true }
+  // PACE level for this hour (auto switching by fuel on hand)
+  let pl=0; if(lvl<=0) pl=outLv; else if(auto){const f=lvl/store; pl=f<pE?3:f<pC?2:f<pA?1:0; pl=Math.min(pl,PACE.length-1)}
+  paceLv[h]=pl; const allow=PACE[pl].tiers;
+  if(h>0&&pl!==prevPl) ev.push({h,type:pl>prevPl?"bad":"del",pace:pl,txt:`PACE ${pl>prevPl?"down":"up"} to ${"PACE"[pl]}: ${PACE[pl].src} (fuel ${fmt(lvl/store*100,0)}%)`});
+  prevPl=pl;
+  if(lvl>0){
+   const full=loads[0]+loads[1]+loads[2], served=loads.reduce((a,v,i)=>a+(allow[i]?v:0),0);
+   const scale=(pl>0&&full>0)?Math.max(0.3,served/full):1;
+   const want=(ser.fuel_gal[t]||0)*scale, used=Math.min(lvl,want); lvl-=used;
+   burnH[h]=used; genH[h]=(ser.gen[t]||0)*scale*(want>0?used/want:1); pvH[h]=ser.pv[t]||0; batH[h]=batDown?0:(ser.bat_out[t]||0); gridH[h]=ser.grid[t]||0;
+   let d=Math.max(0,(ser.gen[t]||0)*scale-(genKw-downKw)) + (ser.pv[t]||0)*Math.min(1,pvDown) + (batDown?(ser.bat_out[t]||0):0);
+   for(const i of [2,1,0]){const x=Math.min(Math.max(0,loads[i]-shedOf(ser,i,t)),d);extra[i][h]=x;d-=x}
+   for(const i of [0,1,2]) if(!allow[i]) extra[i][h]=Math.max(0,loads[i]-shedOf(ser,i,t));
+   if(lvl<=0){ev.push({h,type:"bad",txt:"FUEL OUT: generators stop. Battery and solar carry Tier 1 only."});batE=batDown?0:batKwh*0.5}
+  } else {
+   fuelOut[h]=1; outH++;
+   const pvAv=(S.inp.pv_per_kw[t]||0)*des.pv_kw*(1-Math.min(1,pvDown));
+   extra[2][h]=Math.max(0,loads[2]-shedOf(ser,2,t)); extra[1][h]=Math.max(0,loads[1]-shedOf(ser,1,t));
+   let need=loads[0]-pvAv;
+   pvH[h]=Math.min(pvAv,loads[0]);
+   if(need>0){const take=batDown?0:Math.min(need,batE,batKwh*0.5);batE-=take;need-=take;batH[h]=take;extra[0][h]=Math.max(0,need);unservedT1+=Math.max(0,need)}
+   else if(!batDown) batE=Math.min(batKwh*0.95,batE-need*0.9);
+  }
+  for(let i=0;i<3;i++){const u=Math.min(loads[i],shedOf(ser,i,t)+extra[i][h]);unsH[h]+=u;penH[h]+=u*(S.inp.tier_penalty[i]||0)}
+  // reorder
+  if(!order&&lvl<=rl&&tot>0){
+   let bi=-1,bv=-1e9; MODES.forEach((m,i)=>{if(m.share<=0)return;const v=m.share/tot*(nOrd+1)-cnt[i];if(v>bv){bv=v;bi=i}});
+   const m=MODES[bi]; cnt[bi]++; nOrd++;
+   const del=rnd()>m.rel; const why=rnd()<0.5?"weather":"enemy activity on the route";
+   let arr=h+Math.max(1,Math.round(m.lead))+(del?Math.round(24+rnd()*72):0); let held=false;
+   if(cut>0&&arr>=cutS&&h<cutE&&arr<cutE){arr=cutE;held=true}
+   if(cut>0&&h>=cutS&&h<cutE&&arr<cutE){arr=cutE;held=true}
+   order={i:bi,m,placed:h,arr,del,held,why}; orders.push(order); if(del||held) late++;
+   ev.push({h,type:"info",txt:`Fuel at reorder point (${fmt(lvl,0)} gal). ${m.name} requested, ETA ${fmtDur(arr-h)}${del?` (late: ${why})`:""}${held?" (held by resupply cut)":""}`});
+  }
+  if(order&&h>=order.arr){
+   const m=order.m, amt=store-lvl, trips=Math.max(1,Math.ceil(amt/m.gal)); lvl=store; deliveries++; expo+=trips*m.exp; cas+=trips*m.cas; order.done=h;
+   ev.push({h,type:"del",mode:m.id,gal:amt,trips,txt:`${m.name}: ${fmt(amt,0)} gal in ${trips} ${trips>1?"trips":"trip"}${order.del||order.held?" (late)":""}`,cum:{deliveries,late,expo,cas}});
+   order=null;
+  }
+  if(prevOut&&lvl>0) ev.push({h,type:"del",txt:"Fuel restored: generators back on line"});
+  prevOut=lvl<=0;
+  for(const i of [0,1]){const sh=shedOf(ser,i,t)+extra[i][h]; const on=loads[i]>0&&sh>(i===0?0.05:0.5)*loads[i];
+   if(on&&!shedOn[i]&&h-lastEnd[i]>12) ev.push({h,type:"bad",txt:`Tier ${i+1} power cut${i===0?" (mission-critical loads dark)":""}`});
+   if(!on&&shedOn[i]) lastEnd[i]=h; shedOn[i]=on}
+  level[h]=lvl;
+ }
+ ev.sort((a,b)=>a.h-b.h);
+ S.camp={H,level,extra,fuelOut,paceLv,burnH,genH,pvH,batH,gridH,unsH,penH,ev,strikes,outages,orders,store,rl,totals:{deliveries,late,expo,cas,outH,unservedT1,hits:outages.length,intercepts:strikes.length-outages.length}};
+ $("clock").max=H-1; $("seedTxt").textContent=`luck #${S.seed%1000}`;
+ S._evShown=-1; setClock(Math.min(S.clock,H-1)); renderFuelRun(); renderTrends();
+}
+// ---------- cost and energy over time ----------
+Chart.register({id:"playhead",afterDatasetsDraw(ch){const o=ch.options.plugins&&ch.options.plugins.playhead;if(!o||o.x==null)return;const sc=ch.scales.x;if(!sc)return;
+ const x=sc.getPixelForValue(o.x);if(!(x>=ch.chartArea.left-1&&x<=ch.chartArea.right+1))return;const c=ch.ctx;c.save();c.strokeStyle="#d9a441";c.lineWidth=2;c.beginPath();c.moveTo(x,ch.chartArea.top);c.lineTo(x,ch.chartArea.bottom);c.stroke();c.restore()}});
+function capexNow(){const d=designFromMap();return d.generators.reduce((a,g)=>{const L=LIB.gens.find(x=>x.name===g.name);const own=S.placed.filter(p=>p.kind==="gen"&&p.kw===g.kw&&p.owned).length;return a+L.cost*Math.max(0,g.count-own)},0)
+ +Math.max(0,d.pv_kw-S.placed.filter(p=>p.kind==="pv"&&p.owned).length*10)*S.inp.pv.cost+(d.battery&&!S.placed.some(p=>p.kind==="bat"&&p.owned)?LIB.bats.find(b=>b.kwh===d.battery.kwh).cost:0)}
+function bucketSums(arrs,H,size){const n=Math.ceil(H/size);const out=arrs.map(()=>new Array(n).fill(0));for(let h=0;h<H;h++){const b=Math.floor(h/size);arrs.forEach((a,i)=>out[i][b]+=a[h])}return out}
+function renderTrends(){
+ const C=S.camp; if(!C||!S.inp) return;
+ const days=Math.ceil(C.H/24), fc=S.inp.fuel_cost, gp=S.inp.grid.price||0, capex=capexNow();
+ // ---- cost
+ const cv2=S.costView||"cum", bsz=cv2==="week"?168:24;
+ const [burn,grid,pen]=bucketSums([C.burnH,C.gridH,C.penH],C.H,bsz);
+ const nb=burn.length, lab=Array.from({length:nb},(_,i)=>cv2==="week"?"W"+(i+1):"D+"+i);
+ let fuelC=burn.map(g=>g*fc), gridC=grid.map(k=>k*gp), penC=pen;
+ if(cv2==="cum"){const cum=a=>{let s=0;return a.map(v=>s+=v)};fuelC=cum(fuelC);gridC=cum(gridC);penC=cum(penC)}
+ const capS=new Array(nb).fill(cv2==="cum"?capex:0); if(cv2!=="cum") capS[0]=capex;
+ const M=v=>v/1e6;
+ const ds=[{label:"Buy cost (generators, solar, battery)",data:capS.map(M),backgroundColor:"#8a7a5a88",borderColor:"#b8a074",fill:true,stack:"s",pointRadius:0,borderWidth:1},
+  {label:"Fuel (fully burdened)",data:fuelC.map(M),backgroundColor:"#e07a3faa",borderColor:"#e07a3f",fill:true,stack:"s",pointRadius:0,borderWidth:1}];
+ if(S.inp.grid.enabled) ds.push({label:"Host-nation grid",data:gridC.map(M),backgroundColor:"#a58be0aa",borderColor:"#a58be0",fill:true,stack:"s",pointRadius:0,borderWidth:1});
+ ds.push({label:"Lost-power penalty (model)",data:penC.map(M),borderColor:"#e0574f",borderDash:[5,4],fill:false,stack:"p",pointRadius:0,borderWidth:1.5,hidden:true});
+ const ph=cv2==="week"?S.clock/168:S.clock/24;
+ chart("chCostRun",{type:cv2==="cum"?"line":"bar",data:{labels:lab,datasets:cv2==="cum"?ds:ds.map(d=>Object.assign({},d,{fill:undefined}))},
+  options:{animation:false,interaction:{mode:"index",intersect:false},plugins:{legend:{position:"bottom",labels:{boxWidth:10}},playhead:{x:ph},tooltip:{callbacks:{label:i=>`${i.dataset.label}: $${fmt(i.raw,2)}M`}}},
+   scales:{x:{stacked:true,ticks:{autoSkip:true,maxTicksLimit:12,maxRotation:0}},y:{stacked:true,beginAtZero:true,title:{display:true,text:cv2==="cum"?"$M spent so far":"$M per week"}}}}});
+ const fuelTot=C.burnH.reduce((a,b)=>a+b,0)*fc, gridTot=C.gridH.reduce((a,b)=>a+b,0)*gp, spent=capex+fuelTot+gridTot;
+ const dayOfFuel=fuelTot/Math.max(1,C.H/24); const payback=capex>0&&dayOfFuel>0?capex/dayOfFuel:0;
+ $("costRunStats").innerHTML=[["Spent over the deployment",money(spent)],["Buy cost (day 0)",money(capex)],["Fuel cost per day",money(dayOfFuel)],["Fuel share of spending",fmt(fuelTot/Math.max(1,spent)*100,0)+"%"]]
+  .map(([k,v])=>`<div class="statbox"><small>${k}</small><b>${v}</b></div>`).join("");
+ // ---- energy
+ const ev2=S.energyView||"day", esz=ev2==="week"?168:24;
+ const [g,p,b,gr,u,f]=bucketSums([C.genH,C.pvH,C.batH,C.gridH,C.unsH,C.burnH],C.H,esz);
+ const lab2=Array.from({length:g.length},(_,i)=>ev2==="week"?"W"+(i+1):"D+"+i), MW=v=>v/1000;
+ const eds=[["Generators",g,"#e07a3f"],["Solar",p,"#f2c94c"],["Battery",b,"#4fb6c9"]].concat(S.inp.grid.enabled?[["Grid",gr,"#a58be0"]]:[]).concat([["Unserved (shed)",u,"#e0574f"]])
+  .map(([l,d,c])=>({type:"bar",label:l,data:d.map(MW),backgroundColor:c+(l.startsWith("Unserved")?"99":"cc"),stack:"e",yAxisID:"y",barPercentage:1,categoryPercentage:1}));
+ eds.push({type:"line",label:"Fuel burned (gal)",data:f,borderColor:"#ffffff",borderWidth:1.5,pointRadius:0,yAxisID:"y2"});
+ chart("chEnergyRun",{type:"bar",data:{labels:lab2,datasets:eds},options:{animation:false,interaction:{mode:"index",intersect:false},
+  plugins:{legend:{position:"bottom",labels:{boxWidth:10}},playhead:{x:ev2==="week"?S.clock/168:S.clock/24},tooltip:{callbacks:{label:i=>i.dataset.yAxisID==="y2"?`Fuel: ${fmt(i.raw,0)} gal`:`${i.dataset.label}: ${fmt(i.raw,2)} MWh`}}},
+  scales:{x:{stacked:true,ticks:{autoSkip:true,maxTicksLimit:12,maxRotation:0}},y:{stacked:true,beginAtZero:true,title:{display:true,text:ev2==="week"?"MWh per week":"MWh per day"}},y2:{position:"right",beginAtZero:true,grid:{display:false},title:{display:true,text:"gal"}}}}});
+ const sum=a=>a.reduce((x,y)=>x+y,0), served=sum(C.genH)+sum(C.pvH)+sum(C.batH)+sum(C.gridH);
+ $("energyRunStats").innerHTML=[["Energy delivered",fmt(served/1000,0)+" MWh"],["Solar share",fmt(sum(C.pvH)/Math.max(1,served)*100,0)+"%"],["Fuel burned",fmt(sum(C.burnH),0)+" gal"],["Unserved (all tiers)",fmt(sum(C.unsH)/1000,1)+" MWh"]]
+  .map(([k,v])=>`<div class="statbox"><small>${k}</small><b>${v}</b></div>`).join("");
+}
+function movePlayheads(){
+ const now=performance.now(); if(now-(S._phT||0)<250) return; S._phT=now;
+ if(!document.getElementById("tab-trends").classList.contains("show")) return;
+ for(const [id,v] of [["chCostRun",S.costView],["chEnergyRun",S.energyView]]){const ch=charts[id];if(!ch)continue;ch.options.plugins.playhead={x:v==="week"?S.clock/168:S.clock/24};ch.update("none")}
+}
+function renderFuelRun(){
+ const C=S.camp; if(!C) return; const days=Math.floor(C.H/24);
+ const lv=[],pc=[]; for(let d=0;d<days;d++){let mn=1e9,mx=0;for(let k=0;k<24;k++){const v=C.level[d*24+k];mn=Math.min(mn,v);mx=Math.max(mx,C.paceLv[d*24+k])}lv.push(mn);pc.push(mx)}
+ const cols=["#5cc690","#d9a441","#e07a3f","#e0574f"];
+ chart("chFuelRun",{type:"bar",data:{labels:lv.map((_,d)=>d%30===0?"D+"+d:""),datasets:[{label:"Lowest fuel that day (gal)",data:lv,backgroundColor:pc.map(p=>cols[p]),borderWidth:0,barPercentage:1,categoryPercentage:1}]},
+  options:{animation:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>"D+"+i[0].dataIndex,label:i=>fmt(i.raw,0)+" gal, PACE "+"PACE"[pc[i.dataIndex]]}}},scales:{x:{ticks:{autoSkip:false,maxRotation:0}},y:{beginAtZero:true,max:C.store,title:{display:true,text:"gal"}}}}});
+ const T=C.totals; const daysIn=[0,1,2,3].map(p=>pc.filter(x=>x===p).length);
+ $("fuelRunNote").innerHTML=`Bar colour = lowest PACE level that day: <b style="color:${cols[0]}">P</b> ${daysIn[0]}d, <b style="color:${cols[1]}">A</b> ${daysIn[1]}d, <b style="color:${cols[2]}">C</b> ${daysIn[2]}d, <b style="color:${cols[3]}">E</b> ${daysIn[3]}d. ${T.deliveries} deliveries (${T.late} late), ${fmt(T.outH,0)} hours with fuel out.`;
+}
+function rateFromSlider(v){return 0.1*Math.pow(7300,v/100)}
+function rateLbl(r){if(r<1)return Math.round(r*60)+" min/s";if(r<24)return fmt(r,r<10?1:0)+" h/s";if(r<168)return fmt(r/24,1)+" days/s";if(r<730)return fmt(r/168,1)+" wk/s";return fmt(r/730,1)+" mo/s"}
+function updPlayBtn(){$("btnPlay").innerHTML=S.playing?"&#10074;&#10074; Pause":"&#9654; Play";updateSound()}
+function setClock(h,fromPlay){
+ const H=S.camp?S.camp.H:Math.max(24,Math.round(S.months*30.4*24)); h=Math.max(0,Math.min(H-1,h)); const old=S.clock; S.clock=h;
+ const [s,di,hr,,d]=campIdx(Math.floor(h)); const sc=s!==S.season; S.season=s; S.dayIx=di; S.hour=hr;
+ if(fromPlay&&S.camp&&h>old) S.camp.ev.forEach(e=>{if(e.h>old&&e.h<=h)fire(e)});
+ $("clock").value=Math.floor(h);
+ $("hourLbl").textContent=`D+${d} ${String(hr).padStart(2,"0")}:00 · ${SEASONS[s]} · month ${Math.floor(d/30.4)+1} of ${S.months}`;
+ if(sc){renderDemand();renderDispatch()}
+ const now=performance.now(); if(!fromPlay||now-(S._hudT||0)>120){S._hudT=now;renderHud()}
+ movePlayheads();
+}
+function renderHud(){
+ const C=S.camp; if(!C){$("hud").innerHTML='<span class="note">Fuel, PACE and risk appear here once the simulation runs.</span>';return}
+ const h=Math.min(C.H-1,Math.floor(S.clock)), lvl=C.level[h], f=lvl/C.store;
+ const t=campIdx(h)[3], ser=currentSeries(); const burn=ser?(ser.fuel_gal[t]||0):0;
+ const perDay=S.sim?S.sim.fuel_gal/(S.months*30.4):0;
+ const pend=C.orders.find(o=>o.placed<=h&&o.arr>h);
+ let deliv=0,late=0,expo=0,cas=0; for(const e of C.ev){if(e.h>h)break;if(e.cum){({deliveries:deliv,late,expo,cas}=e.cum)}}
+ const st=C.strikes.filter(s=>s.h<=h); const hits=st.filter(s=>!s.icp).length;
+ const col=C.fuelOut[h]?"var(--bad)":(lvl<=C.rl?"var(--accent)":"var(--ok)");
+ const pl=C.paceLv[h], pcol=["#5cc690","#d9a441","#e07a3f","#e0574f"][pl]; const plv=S.pace&&S.pace[pl];
+ $("hud").innerHTML=`<span class="cell" title="${plv?esc(plv.src):""}"><span class="pacebadge" style="background:${pcol}">PACE ${"PACE"[pl]}</span><span class="note">${plv?plv.tiers.map((x,i)=>x?"T"+(i+1):"").filter(Boolean).join("+"):""}</span></span>
+  <span class="cell"><span class="note">Fuel</span><span class="gauge"><i style="width:${(f*100).toFixed(1)}%;background:${col}"></i><b style="left:${(C.rl/C.store*100).toFixed(1)}%" title="reorder point"></b></span><b class="mono" style="color:${col}">${fmt(lvl,0)} gal</b><span class="note">${C.fuelOut[h]?"FUEL OUT":(perDay>0?fmt(lvl/perDay,1)+" d left":"")}</span></span>
+  <span class="cell">${pend?`<span class="note">Next</span> <b>${pend.m.name.split(" (")[0]}</b> <span class="mono">${fmtDur(pend.arr-S.clock)}</span>${pend.del?' <span style="color:var(--accent)">late</span>':""}${pend.held?' <span style="color:var(--bad)">held</span>':""}`:`<span class="note">No delivery on order</span>`}</span>
+  <span class="cell"><span class="note">Deliveries</span> <b class="mono">${deliv}</b>${late?`<span style="color:var(--accent)">(${late} late)</span>`:""}</span>
+  <span class="cell"><span class="note">Exposure</span> <b class="mono">${fmt(expo,0)}</b><span class="note">soldier-h</span></span>
+  <span class="cell"><span class="note">Exp. casualties</span> <b class="mono">${fmt(cas,2)}</b></span>
+  ${st.length?`<span class="cell"><span class="note">Strikes</span> <b class="mono">${st.length}</b><span class="note">(${hits} hit)</span></span>`:""}`;
+ // event log: only re-render when the number of past events changes
+ let n=0; for(const e of C.ev){if(e.h>h)break;n++}
+ if(n!==S._evShown){S._evShown=n; const past=C.ev.slice(Math.max(0,n-80),n).reverse();
+  $("evList").innerHTML=past.length?past.map(e=>`<div class="ev-${e.type}">${stamp(e.h)} ${e.txt}</div>`).join(""):'<div class="ev-info">Nothing yet. Press Play.</div>';
+  $("evHead").textContent=`Event log (${n} of ${C.ev.length})`; $("tabLogBtn").textContent=n?`Log (${n})`:"Log"}
+}
+function fire(e){
+ const now=performance.now();
+ if(e.type==="del"&&e.mode){spawn({kind:e.mode,trips:e.trips,gal:e.gal});sfx(e.mode==="sling"?"rotor":e.mode==="air"?"plane":"truck");setTimeout(()=>sfx("chime"),S.rate>150?1500:3200)}
+ else if(e.type==="strike"){spawn({kind:"strike",s:e.s});sfx(e.s.kind==="IDF"?"whistle":"buzz");setTimeout(()=>sfx("boom"),e.s.kind==="IDF"?850:1500)}
+ else if(e.type==="bad"&&/FUEL OUT|Tier 1/.test(e.txt)){sfx("alarm");flashHud()}
+ else if(e.pace!=null){if(e.type==="bad")sfx("alarm");flashHud()}
+}
+function spawn(a){const dur=a.kind==="strike"?3000:(S.rate>150?3500:7500);
+ if(S.anims.filter(x=>x.kind!=="txt").length>=8) return;
+ a.t0=performance.now();a.dur=dur;S.anims.push(a);
+ if(a.gal) S.anims.push({kind:"txt",txt:"+"+fmt(a.gal,0)+" gal",t0:a.t0+dur*0.5,dur:2200});
+}
+// ---------- animation drawing ----------
+function scr(x,y,alt){const p=toScr(x,y);return [p[0],p[1]+TH/2-(alt||0)*Math.min(1,TW/44)]}
+function fuelPt(){const f=S.placed.find(p=>p.kind==="b"&&p.type==="fuel");if(f){const [w,d]=fp(f);return [f.x+w/2,f.y+d+0.5]}return [N/2,N/2]}
+function along(pts,s){ // point at distance s (tiles) along a polyline
+ for(let i=1;i<pts.length;i++){const L=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);if(s<=L||i===pts.length-1){const u=Math.min(1,s/Math.max(L,1e-6));return [pts[i-1][0]+(pts[i][0]-pts[i-1][0])*u,pts[i-1][1]+(pts[i][1]-pts[i-1][1])*u]}s-=L}return pts[pts.length-1]}
+function plen(pts){let L=0;for(let i=1;i<pts.length;i++)L+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);return L}
+function ell(x,y,rx,ry,fill){cx.beginPath();cx.ellipse(x,y,rx,ry,0,0,7);cx.fillStyle=fill;cx.fill()}
+function drawTruck(x,y,col){const [sx,sy]=toScr(x-0.28,y-0.28);box(sx,sy,0.56,0.56,7,col,1);const [a,b]=toScr(x-0.12,y-0.12);box(a,b-7,0.24,0.24,3,"#3a3a32",1)}
+function drawHelo(x,y,alt,load,now,lift){
+ const [gx,gy]=scr(x,y,0); ell(gx,gy,18*TW/44,6*TW/44,"rgba(0,0,0,.28)");
+ const [hx,hy]=scr(x,y,alt); const k=TW/44;
+ if(load){cx.strokeStyle="#ddd";cx.lineWidth=1;cx.beginPath();cx.moveTo(hx,hy+5*k);cx.lineTo(hx,hy+5*k+lift);cx.stroke();ell(hx,hy+9*k+lift,8*k,5*k,"#2f3a24")}
+ ell(hx,hy,22*k,6.5*k,"#4b5320"); cx.fillStyle="#3c4219";cx.fillRect(hx-17*k,hy-9*k,5*k,5*k);cx.fillRect(hx+12*k,hy-11*k,5*k,7*k);
+ const ang=now/40; cx.strokeStyle="rgba(220,220,220,.8)";cx.lineWidth=1.5;
+ for(const ox of [-15,15]){const rx=hx+ox*k, ry=hy-11*k-(ox>0?2*k:0);for(let b=0;b<3;b++){const a=ang*(ox>0?1:-1)+b*2.094;cx.beginPath();cx.moveTo(rx-Math.cos(a)*16*k,ry-Math.sin(a)*4*k);cx.lineTo(rx+Math.cos(a)*16*k,ry+Math.sin(a)*4*k);cx.stroke()}}
+ cx.lineWidth=1;
+}
+function drawPlane(x,y,alt){const [gx,gy]=scr(x,y,0),k=TW/44;ell(gx,gy,30*k,8*k,"rgba(0,0,0,.22)");const [px,py]=scr(x,y,alt);
+ cx.save();cx.translate(px,py);cx.rotate(0.46);ell(0,0,32*k,6*k,"#8b9197");cx.fillStyle="#6f757b";cx.fillRect(-6*k,-34*k,10*k,68*k);cx.fillRect(-30*k,-12*k,6*k,24*k);
+ cx.fillStyle="#555";for(const o of [-24,-12,12,24]){cx.fillRect(-9*k,o*k-2*k,5*k,4*k)}cx.restore()}
+function drawChute(x,y,alt){const [px,py]=scr(x,y,alt),k=TW/44;cx.fillStyle="#d8d4c0";cx.beginPath();cx.arc(px,py-16*k,11*k,Math.PI,0);cx.fill();
+ cx.strokeStyle="#aaa";cx.beginPath();cx.moveTo(px-11*k,py-16*k);cx.lineTo(px,py);cx.moveTo(px+11*k,py-16*k);cx.lineTo(px,py);cx.stroke();cx.fillStyle="#6b5636";cx.fillRect(px-4*k,py-2*k,8*k,7*k)}
+function drawBoom(x,y,u,alt){const [px,py]=scr(x,y,alt||0),k=TW/44;const r=(6+u*34)*k;
+ cx.fillStyle=`rgba(255,${200-u*120|0},60,${Math.max(0,0.9-u)})`;cx.beginPath();cx.arc(px,py-r*0.4,r,0,7);cx.fill();
+ cx.fillStyle=`rgba(70,65,60,${Math.max(0,0.6-u*0.5)})`;cx.beginPath();cx.arc(px+4*k,py-r*0.9-u*20*k,r*0.8,0,7);cx.fill()}
+function label(x,y,alt,txt,col){const [px,py]=scr(x,y,alt);cx.font="bold 11px Segoe UI";cx.textAlign="center";const w=cx.measureText(txt).width+10;
+ cx.fillStyle="rgba(10,14,12,.8)";cx.fillRect(px-w/2,py-14,w,15);cx.fillStyle=col||"#fff";cx.fillText(txt,px,py-3)}
+function drawAnims(now){
+ if(!S.anims.length) return;
+ const [fx,fy]=fuelPt(); const gate=[Math.floor(N/2),N-1];
+ for(const a of S.anims){const u=(now-a.t0)/a.dur; if(u<0||u>1) continue;
+  if(a.kind==="convoy"||a.kind==="ship"){
+   const path=[[gate[0],N+7],[gate[0],gate[1]],[gate[0],fy],[fx,fy]]; const Lp=plen(path);
+   const n=a.kind==="convoy"?Math.min(6,2+a.trips*2):Math.min(5,1+a.trips); const col=a.kind==="convoy"?"#8f8455":"#d9d9cf";
+   let lead,dirOut=false; if(u<0.45) lead=(u/0.45)*Lp; else if(u<0.62) lead=Lp; else {lead=Lp-((u-0.62)/0.38)*(Lp+n*1.1);dirOut=true}
+   for(let i=n-1;i>=0;i--){const s=dirOut?lead+i*1.1:lead-i*1.1; if(s<0||s>Lp) continue; const [x,y]=along(path,s); drawTruck(x,y,col)}
+   const lp=along(path,Math.max(0,Math.min(Lp,lead)));
+   if(u>0.45&&u<0.62){const f=(now/150)%1;cx.fillStyle=`rgba(242,201,76,${1-f})`;const [px,py]=scr(fx,fy,10+f*14);cx.beginPath();cx.arc(px,py,3,0,7);cx.fill()}
+   label(lp[0],lp[1],22,a.kind==="convoy"?`Ground convoy · ${n} trucks`:"Contractor tankers (from port)",a.kind==="convoy"?"#e8dca0":"#fff");
+   if(a.kind==="ship"&&u<0.35){const [px,py]=scr(gate[0],N+6,0);cx.font="28px Segoe UI Emoji";cx.fillText("\u{1F6A2}",px-40,py+10)}
+  } else if(a.kind==="sling"){
+   const k=Math.min(3,a.trips); const hz=S.placed.find(p=>p.kind==="b"&&p.type==="hlz"); const hx0=hz?hz.x+1:fx-1, hy0=hz?hz.y+1.5:fy-1.5;
+   for(let i=0;i<k;i++){const v=(u-i*0.08)/(1-0.16); if(v<0||v>1) continue; const tx=hx0+i*0.6, ty=hy0-i*0.5;
+    let x,y,alt,load=true,lift=22;
+    if(v<0.4){const w=v/0.4;x=N+10+(tx-N-10)*w;y=-6+(ty+6)*w;alt=170-(170-80)*w}
+    else if(v<0.6){const w=(v-0.4)/0.2;x=tx;y=ty;alt=80-w*45;lift=22-w*6}
+    else{const w=(v-0.6)/0.4;x=tx+(-10-tx)*w;y=ty+(N+5-ty)*w;alt=35+w*140;load=false}
+    if(v>=0.6){const [bx,by]=scr(tx,ty,0);ell(bx,by-3,8*TW/44,5*TW/44,"#2f3a24")}
+    drawHelo(x,y,alt,load,now,lift);
+    if(i===0) label(x,y,alt+26,`CH-47 sling load${a.trips>1?" · "+a.trips+" lifts":""}`,"#cfe3a6")}
+  } else if(a.kind==="air"){
+   const y0=fy-2.5, x=-14+u*(N+28), alt=150; const ux=(fx+14)/(N+28);
+   const nb=Math.min(6,Math.max(2,a.trips*2));
+   for(let j=0;j<nb;j++){const rel=ux-0.05+j*0.02; if(u<rel) continue; const w=Math.min(1,(u-rel)/0.4); const bx=fx-2+j*0.7+w*0.8, by=y0+(j%2)*0.8;
+    if(w<1) drawChute(bx,by,alt*(1-w)); else {const [px,py]=scr(bx,by,0);cx.fillStyle="#6b5636";cx.fillRect(px-4,py-4,8,6)}}
+   if(x<N+14) drawPlane(x,y0,alt);
+   label(Math.min(Math.max(x,2),N-2),y0,alt+30,`C-130 airdrop · ${nb} bundles`,"#d0d6dc");
+  } else if(a.kind==="strike"){
+   const s=a.s;
+   if(s.kind==="IDF"){
+    if(u<0.28){const w=u/0.28;const [x0,y0]=scr(s.x-7,s.y-7,320),[x1,y1]=scr(s.x,s.y,0);const px=x0+(x1-x0)*w,py=y0+(y1-y0)*w;
+     cx.strokeStyle="rgba(255,220,150,.9)";cx.lineWidth=2;cx.beginPath();cx.moveTo(px-(x1-x0)*0.08,py-(y1-y0)*0.08);cx.lineTo(px,py);cx.stroke();cx.lineWidth=1}
+    else drawBoom(s.x,s.y,(u-0.28)/0.72);
+    if(u>0.28) label(s.x,s.y,60,"INDIRECT FIRE","#ff9a7a");
+   } else {
+    const cu=S.placed.find(p=>p.kind==="b"&&p.type==="cuas"); const sx0=-4, sy0=s.y-2;
+    const stop=s.icp?0.45:0.55; const w=Math.min(1,u/stop); const x=sx0+(s.x-sx0)*w, y=sy0+(s.y-sy0)*w; const alt=s.icp?60:60*(1-Math.max(0,(w-0.8)/0.2));
+    if(u<stop){const [px,py]=scr(x,y,alt);cx.strokeStyle="#222";cx.lineWidth=2;cx.beginPath();cx.moveTo(px-7,py-4);cx.lineTo(px+7,py+4);cx.moveTo(px+7,py-4);cx.lineTo(px-7,py+4);cx.stroke();cx.lineWidth=1;
+     if(s.icp&&cu&&u>stop-0.12){const [qx,qy]=scr(cu.x+0.5,cu.y+0.5,20);cx.strokeStyle="rgba(120,230,255,.9)";cx.beginPath();cx.moveTo(qx,qy);cx.lineTo(px,py);cx.stroke()}}
+    else drawBoom(s.icp?x:s.x,s.icp?y:s.y,(u-stop)/(1-stop),s.icp?alt:0);
+    label(x,y,alt+24,s.icp?"UAS · intercepted":"UAS strike",s.icp?"#9fe6ff":"#ff9a7a");
+   }
+  } else if(a.kind==="txt"){const [px,py]=scr(fx,fy,30+u*40);cx.font="bold 14px Consolas";cx.textAlign="center";cx.fillStyle=`rgba(120,240,170,${1-u})`;cx.fillText(a.txt,px,py)}
+ }
+}
+// ---------- main loop ----------
+let lastT=performance.now(), lastDraw=0;
+function loop(){ // timer-driven so game speed stays true even when the browser throttles animation frames
+ const now=performance.now(); const dt=Math.min(1,(now-lastT)/1000); lastT=now;
+ if(S.playing&&S.camp){let h=S.clock+S.rate*dt;
+  if(S.stopAt&&h>=S.stopAt){h=S.stopAt;S.stopAt=null;S.playing=false;updPlayBtn();if(BRIEF.i>=0)renderBrief()}
+  if(h>=S.camp.H-1){h=S.camp.H-1;S.playing=false;updPlayBtn()} setClock(h,true)}
+ S.anims=S.anims.filter(a=>now-a.t0<a.dur);
+ const busy=S.playing||S.anims.length; const idle=S.placed.length>0;
+ if((busy&&now-lastDraw>33)||(idle&&now-lastDraw>70)){draw();lastDraw=now}
+ updateSound();
+}
+// ---------- sound (synthesized with WebAudio; no files) ----------
+const SND={on:true,ctx:null,hum:null};
+try{SND.on=localStorage.getItem("fobSound")!=="off"}catch(e){}
+function actx(){
+ if(!SND.ctx){try{const C=new (window.AudioContext||window.webkitAudioContext)();SND.ctx=C;const g=C.createGain();g.gain.value=0;const f=C.createBiquadFilter();f.type="lowpass";f.frequency.value=240;
+  [50,100.6,151].forEach(fr=>{const o=C.createOscillator();o.type="sawtooth";o.frequency.value=fr;o.connect(f);o.start()});f.connect(g);g.connect(C.destination);SND.hum=g}catch(e){SND.ctx=null}}
+ if(SND.ctx&&SND.ctx.state==="suspended") SND.ctx.resume(); return SND.ctx}
+function updateSound(){if(!SND.ctx||!SND.hum)return;const n=S._genRunning||0;const tgt=SND.on&&S.playing?Math.min(0.05,0.014*n):0;
+ if(Math.abs((SND._last||0)-tgt)>1e-4){SND.hum.gain.setTargetAtTime(tgt,SND.ctx.currentTime,0.3);SND._last=tgt}}
+function noiseSrc(C,dur){const b=C.createBuffer(1,Math.ceil(C.sampleRate*dur),C.sampleRate);const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;const s=C.createBufferSource();s.buffer=b;return s}
+function envG(C,peak,dur,att){const g=C.createGain();const t=C.currentTime;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+att);g.gain.setValueAtTime(peak,t+Math.max(att,dur-att));g.gain.linearRampToValueAtTime(0,t+dur);g.connect(C.destination);return g}
+function sfx(kind){
+ if(!SND.on) return; const C=actx(); if(!C) return; const t=C.currentTime; const D=S.rate>150?3.2:6.5;
+ try{
+ if(kind==="truck"){const g=envG(C,0.07,D,0.8);const o=C.createOscillator();o.type="sawtooth";o.frequency.value=42;const f=C.createBiquadFilter();f.type="lowpass";f.frequency.value=180;o.connect(f);f.connect(g);o.start();o.stop(t+D);
+  const n=noiseSrc(C,D),nf=C.createBiquadFilter();nf.type="lowpass";nf.frequency.value=140;n.connect(nf);nf.connect(g);n.start()}
+ else if(kind==="rotor"){const g=envG(C,0.12,D,1);const n=noiseSrc(C,D),bp=C.createBiquadFilter();bp.type="lowpass";bp.frequency.value=260;const am=C.createGain();am.gain.value=0.5;
+  const lfo=C.createOscillator();lfo.type="square";lfo.frequency.value=5.2;const lg=C.createGain();lg.gain.value=0.5;lfo.connect(lg);lg.connect(am.gain);n.connect(bp);bp.connect(am);am.connect(g);n.start();lfo.start();lfo.stop(t+D)}
+ else if(kind==="plane"){const g=envG(C,0.06,D,1.5);const f=C.createBiquadFilter();f.type="lowpass";f.frequency.value=520;f.connect(g);
+  [96,98.5,192].forEach(fr=>{const o=C.createOscillator();o.type="sawtooth";o.frequency.setValueAtTime(fr*1.06,t);o.frequency.linearRampToValueAtTime(fr*0.94,t+D);o.connect(f);o.start();o.stop(t+D)})}
+ else if(kind==="boom"){const g=C.createGain();g.gain.setValueAtTime(0.45,t);g.gain.exponentialRampToValueAtTime(0.001,t+1.4);g.connect(C.destination);
+  const n=noiseSrc(C,1.5),f=C.createBiquadFilter();f.type="lowpass";f.frequency.setValueAtTime(1400,t);f.frequency.exponentialRampToValueAtTime(70,t+1.2);n.connect(f);f.connect(g);n.start();
+  const o=C.createOscillator();o.frequency.setValueAtTime(70,t);o.frequency.exponentialRampToValueAtTime(30,t+0.8);o.connect(g);o.start();o.stop(t+1)}
+ else if(kind==="whistle"){const g=envG(C,0.04,0.8,0.05);const o=C.createOscillator();o.frequency.setValueAtTime(1900,t);o.frequency.exponentialRampToValueAtTime(420,t+0.8);o.connect(g);o.start();o.stop(t+0.8)}
+ else if(kind==="buzz"){const g=envG(C,0.03,1.5,0.3);const o=C.createOscillator();o.type="sawtooth";o.frequency.value=180;const f=C.createBiquadFilter();f.type="bandpass";f.frequency.value=900;o.connect(f);f.connect(g);o.start();o.stop(t+1.5)}
+ else if(kind==="chime"){[660,990].forEach((fr,i)=>{const g=C.createGain();g.gain.setValueAtTime(0,t+i*0.14);g.gain.linearRampToValueAtTime(0.06,t+i*0.14+0.02);g.gain.exponentialRampToValueAtTime(0.001,t+i*0.14+0.5);g.connect(C.destination);const o=C.createOscillator();o.frequency.value=fr;o.connect(g);o.start(t+i*0.14);o.stop(t+i*0.14+0.55)})}
+ else if(kind==="alarm"){for(let i=0;i<4;i++){const g=C.createGain();g.gain.setValueAtTime(0.04,t+i*0.25);g.gain.setValueAtTime(0,t+i*0.25+0.2);g.connect(C.destination);const o=C.createOscillator();o.type="square";o.frequency.value=i%2?330:440;o.connect(g);o.start(t+i*0.25);o.stop(t+i*0.25+0.21)}}
+ }catch(e){}
+}
+
+// ======================= realistic rendering and terrain by region =======================
+const BIOMES={
+ desert:   {name:"Desert",bg:"#c6a978",bg2:"#b99b6b",bg3:"#d4bb8c",ground:"#b8a074",road:"#d1bf98",hesco:"#b39b67",mesh:"#857048",tent:"#cdb98f",cont:"#b9a479",hut:"#a8916a",veg:"desert"},
+ jungle:   {name:"Jungle / tropical",bg:"#2c5026",bg2:"#36602f",bg3:"#41703a",ground:"#7b6948",road:"#9a8963",hesco:"#8c7f57",mesh:"#5c5236",tent:"#5e6a44",cont:"#5d6a48",hut:"#6c5b41",veg:"jungle"},
+ temperate:{name:"Temperate / farmland",bg:"#62803f",bg2:"#6f8e48",bg3:"#7a9a52",ground:"#8a8674",road:"#a9a596",hesco:"#9a8c62",mesh:"#6a5f44",tent:"#66704a",cont:"#6a7350",hut:"#7c6a50",veg:"forest"},
+ arctic:   {name:"Arctic / cold",bg:"#e8edf1",bg2:"#dbe3ea",bg3:"#f4f7f9",ground:"#d8dfe5",road:"#b8b2a6",hesco:"#9a927c",mesh:"#6e6857",tent:"#e4e4dc",cont:"#c9ccc6",hut:"#9c8e78",veg:"pine"},
+ mountain: {name:"Mountain / high desert",bg:"#8f7f66",bg2:"#83735b",bg3:"#9d8d72",ground:"#9b8b6f",road:"#b6a88c",hesco:"#a08c63",mesh:"#72644a",tent:"#c4b18b",cont:"#ae9b76",hut:"#9a8264",veg:"rock"},
+};
+function biomeKey(){
+ const ov=$("biome")?$("biome").value:"auto"; if(ov&&ov!=="auto") return ov;
+ const c=S.climate; if(!c) return "desert";
+ const T=c.seasons.flatMap(s=>s.flatMap(d=>d.temp)); const mean=T.reduce((a,b)=>a+b,0)/T.length, mn=Math.min(...T), mx=Math.max(...T);
+ const lat=Math.abs(c.lat), ghi=c.annual_ghi_kwh_m2;
+ if(lat<23.5) return (ghi>=1950&&mean>26)?"desert":"jungle";      // tropics: dry and very sunny = desert, else rainforest
+ if(ghi>=1700&&lat<45) return (mx<36&&mean<20)?"mountain":"desert"; // sunny mid-latitudes: hot = desert, cooler = high desert / mountains
+ if(lat>=58||mn<-15||mean<2) return "arctic";
+ return "temperate";
+}
+const SK=()=>Math.max(0.45,Math.min(1.1,TW/44));
+function P3(x,y,z){const p=toScr(x,y);return [p[0],p[1]-z]}
+function quad(a,b,c,d,fill,stroke){poly([a,b,c,d],fill,stroke)}
+function rng2(seed){let s=seed>>>0||1;return ()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+// a box in tile coordinates: x,y footprint corner, w,d size, z0 base height, h height (px)
+function box3(X,Y,w,d,z0,h,col,L,edge){
+ const e=edge||"rgba(0,0,0,.28)";
+ quad(P3(X,Y+d,z0),P3(X+w,Y+d,z0),P3(X+w,Y+d,z0+h),P3(X,Y+d,z0+h),shade(col,0.72*L),e);
+ quad(P3(X+w,Y,z0),P3(X+w,Y+d,z0),P3(X+w,Y+d,z0+h),P3(X+w,Y,z0+h),shade(col,0.92*L),e);
+ quad(P3(X,Y,z0+h),P3(X+w,Y,z0+h),P3(X+w,Y+d,z0+h),P3(X,Y+d,z0+h),shade(col,1.12*L),e);
+}
+function ribs(X,Y,w,d,z0,h,n){ // corrugation lines on the two visible faces
+ cx.strokeStyle="rgba(0,0,0,.16)";cx.beginPath();
+ for(let i=1;i<n*w;i++){const x=X+i/n;const a=P3(x,Y+d,z0+1),b=P3(x,Y+d,z0+h-1);cx.moveTo(a[0],a[1]);cx.lineTo(b[0],b[1])}
+ for(let i=1;i<n*d;i++){const y=Y+i/n;const a=P3(X+w,y,z0+1),b=P3(X+w,y,z0+h-1);cx.moveTo(a[0],a[1]);cx.lineTo(b[0],b[1])}
+ cx.stroke();
+}
+function shadowOf(X,Y,w,d,h){ // soft ground shadow toward the lower right
+ const o=Math.min(1.2,h/40); cx.fillStyle="rgba(0,0,0,.16)";
+ poly([toScr(X+o*0.3,Y+d),toScr(X+w+o,Y+d),toScr(X+w+o,Y+o*0.4),toScr(X+w,Y)],"rgba(0,0,0,.14)");
+}
+function drawTent(X,Y,w,d,H,col,L,door){ // TEMPER-style tent: low walls, pitched roof, door on the gable
+ const hw=H*0.42, hr=H, s=f=>shade(col,f*L), e="rgba(0,0,0,.25)";
+ if(w>=d){const ym=Y+d/2;
+  quad(P3(X,Y,hw),P3(X+w,Y,hw),P3(X+w,ym,hr),P3(X,ym,hr),s(0.82),e);
+  quad(P3(X,Y+d,0),P3(X+w,Y+d,0),P3(X+w,Y+d,hw),P3(X,Y+d,hw),s(0.68),e);
+  poly([P3(X+w,Y,0),P3(X+w,Y+d,0),P3(X+w,Y+d,hw),P3(X+w,ym,hr),P3(X+w,Y,hw)],s(0.9),e);
+  quad(P3(X,Y+d,hw),P3(X+w,Y+d,hw),P3(X+w,ym,hr),P3(X,ym,hr),s(1.08),e);
+  cx.strokeStyle="rgba(0,0,0,.14)";cx.beginPath();for(let i=1;i<w*2;i++){const a=P3(X+i/2,Y+d,hw),b=P3(X+i/2,ym,hr);cx.moveTo(a[0],a[1]);cx.lineTo(b[0],b[1])}cx.stroke();
+  if(door){const dw=Math.min(0.45,d*0.22);quad(P3(X+w,ym-dw/2,0),P3(X+w,ym+dw/2,0),P3(X+w,ym+dw/2,hw*1.35),P3(X+w,ym-dw/2,hw*1.35),"rgba(35,28,18,.6)")}
+ } else {const xm=X+w/2;
+  quad(P3(X,Y,hw),P3(X,Y+d,hw),P3(xm,Y+d,hr),P3(xm,Y,hr),s(0.82),e);
+  quad(P3(X+w,Y,0),P3(X+w,Y+d,0),P3(X+w,Y+d,hw),P3(X+w,Y,hw),s(0.9),e);
+  poly([P3(X,Y+d,0),P3(X+w,Y+d,0),P3(X+w,Y+d,hw),P3(xm,Y+d,hr),P3(X,Y+d,hw)],s(0.68),e);
+  quad(P3(X+w,Y,hw),P3(X+w,Y+d,hw),P3(xm,Y+d,hr),P3(xm,Y,hr),s(1.08),e);
+  cx.strokeStyle="rgba(0,0,0,.14)";cx.beginPath();for(let i=1;i<d*2;i++){const a=P3(X+w,Y+i/2,hw),b=P3(xm,Y+i/2,hr);cx.moveTo(a[0],a[1]);cx.lineTo(b[0],b[1])}cx.stroke();
+  if(door){const dw=Math.min(0.45,w*0.22);quad(P3(xm-dw/2,Y+d,0),P3(xm+dw/2,Y+d,0),P3(xm+dw/2,Y+d,hw*1.35),P3(xm-dw/2,Y+d,hw*1.35),"rgba(35,28,18,.6)")}
+ }
+}
+function ecu(X,Y,L,k){box3(X,Y,0.32,0.28,0,6*k,"#9a9a8c",L)} // environmental control unit (tent air conditioner)
+function drawItem(it,w,d,col,L,B,running,ghi){
+ const k=SK(), X=it.x, Y=it.y, H=heightOf(it)*k, hard=S.type==="exist"||stdKey()==="semi", down=col==="#5a2a22";
+ if(it.kind==="b"){
+  const c=CAT[it.type]; const tentCol=down?col:B.tent, contCol=down?col:B.cont, hutCol=down?col:B.hut;
+  if(it.type!=="hlz") shadowOf(X,Y,w,d,H);
+  switch(it.type){
+   case "hlz":{ quad(P3(X+0.1,Y+0.1,0),P3(X+w-0.1,Y+0.1,0),P3(X+w-0.1,Y+d-0.1,0),P3(X+0.1,Y+d-0.1,0),shade(B.road,0.92*L),"rgba(0,0,0,.2)");
+    const cpt=toScr(X+w/2,Y+d/2); cx.strokeStyle=`rgba(240,240,230,${0.85*L})`; cx.lineWidth=2*k; cx.beginPath(); cx.ellipse(cpt[0],cpt[1],TW*1.05,TH*1.05,0,0,7); cx.stroke();
+    cx.font=`bold ${Math.round(18*k)}px Segoe UI`; cx.fillStyle=`rgba(240,240,230,${0.9*L})`; cx.textAlign="center"; cx.fillText("H",cpt[0],cpt[1]+6*k); cx.lineWidth=1; break}
+   case "fp":{ const ph=H*0.72; const legs=[[0.12,0.12],[0.78,0.12],[0.12,0.78],[0.78,0.78]];
+    legs.forEach(([a,b])=>box3(X+a,Y+b,0.1,0.1,0,ph,"#5b4a33",L)); box3(X+0.02,Y+0.02,0.96,0.96,ph,H*0.18,down?col:"#a48f62",L); box3(X-0.05,Y-0.05,1.1,1.1,H*1.02,2.5*k,"#6b6b5c",L); break}
+   case "cuas":{ box3(X+0.1,Y+0.15,0.8,0.7,0,H*0.45,contCol,L); ribs(X+0.1,Y+0.15,0.8,0.7,0,H*0.45,6);
+    const m=P3(X+0.5,Y+0.5,H*0.45), m2=P3(X+0.5,Y+0.5,H); cx.strokeStyle="#333"; cx.lineWidth=2*k; cx.beginPath(); cx.moveTo(m[0],m[1]); cx.lineTo(m2[0],m2[1]); cx.stroke(); cx.lineWidth=1;
+    const a=Date.now()/600; cx.save(); cx.translate(m2[0],m2[1]); cx.scale(Math.cos(a),1); cx.fillStyle=shade("#d6d6cc",L); cx.fillRect(-7*k,-6*k,14*k,8*k); cx.restore(); break}
+   case "comms":{ box3(X+0.1,Y+0.2,w-0.3,1,0,H*0.5,contCol,L); ribs(X+0.1,Y+0.2,w-0.3,1,0,H*0.5,6);
+    const dp=P3(X+w*0.6,Y+d*0.75,H*0.35); cx.fillStyle=shade("#e6e6e0",L); cx.beginPath(); cx.ellipse(dp[0],dp[1],10*k,7*k,-0.5,0,7); cx.fill(); cx.strokeStyle="#555"; cx.stroke();
+    const m=P3(X+0.3,Y+0.4,H*0.5), m2=P3(X+0.3,Y+0.4,H*1.6); cx.strokeStyle="#3a3a3a"; cx.beginPath(); cx.moveTo(m[0],m[1]); cx.lineTo(m2[0],m2[1]); cx.stroke(); break}
+   case "fuel":{ box3(X+0.2,Y+0.3,1.1,0.7,0,H*0.6,contCol,L); ribs(X+0.2,Y+0.3,1.1,0.7,0,H*0.6,6); box3(X+1.45,Y+0.5,0.35,0.35,0,H*0.9,"#7a7f84",L); break}
+   case "rowpu":{ box3(X+0.05,Y+0.15,1.2,0.7,0,H*0.8,contCol,L); ribs(X+0.05,Y+0.15,1.2,0.7,0,H*0.8,6);
+    const tp=toScr(X+1.62,Y+0.5); cx.fillStyle=shade("#3f6f8a",L); cx.fillRect(tp[0]-7*k,tp[1]-H*0.9,14*k,H*0.9); cx.beginPath(); cx.ellipse(tp[0],tp[1]-H*0.9,7*k,3.5*k,0,0,7); cx.fillStyle=shade("#5b8daa",L); cx.fill(); break}
+   case "hyg": case "latr": case "laun": case "drain":{ box3(X+0.05,Y+0.1,w-0.1,d-0.2,0,H,down?col:(it.type==="latr"?"#c9c9bf":B.cont),L); ribs(X+0.05,Y+0.1,w-0.1,d-0.2,0,H,7);
+    const dp=P3(X+w*0.5,Y+d-0.1,0), dq=P3(X+w*0.5+0.25,Y+d-0.1,H*0.75); cx.fillStyle="rgba(30,30,30,.55)"; cx.fillRect(dp[0],dq[1],(dq[0]-dp[0]),dp[1]-dq[1]); break}
+   default:{ // tents (expeditionary) or hard buildings / containers (existing FOB)
+    if(hard){
+     if(it.type==="bill"){ for(let r=0;r<Math.floor(d);r++){box3(X+0.1,Y+r+0.15,w-0.2,0.7,0,10*k,hutCol==="#5a2a22"?col:B.cont,L);ribs(X+0.1,Y+r+0.15,w-0.2,0.7,0,10*k,5)} } // CHU rows
+     else { box3(X+0.05,Y+0.05,w-0.1,d-0.1,0,H*0.75,hutCol,L);
+      const wy=P3(X+0.4,Y+d-0.05,H*0.35); cx.fillStyle="rgba(25,35,45,.6)"; for(let i=0;i<w*2-1;i++){const p=P3(X+0.35+i*0.5,Y+d-0.05,H*0.42);cx.fillRect(p[0],p[1],5*k,4*k)}
+      quad(P3(X+0.15,Y+0.15,H*0.75),P3(X+w-0.15,Y+0.15,H*0.75),P3(X+w-0.15,Y+d-0.15,H*0.75),P3(X+0.15,Y+d-0.15,H*0.75),shade(hutCol,0.95*L)) }
+    } else {
+     drawTent(X+0.05,Y+0.05,w-0.1,d-0.1,H,it.type==="aid"&&!down?"#d9d4c4":tentCol,L,true);
+     if(c.hv) ecu(X+w-0.05,Y+d-0.55,L,k);
+    }
+    if(it.type==="aid"){const p=toScr(X+w/2,Y+d/2);const z=hard?H*0.75:H*0.75;cx.fillStyle="#c0392b";cx.fillRect(p[0]-5*k,p[1]-z-1.5*k,10*k,3*k);cx.fillRect(p[0]-1.5*k,p[1]-z-5*k,3*k,10*k)}
+    if(it.type==="toc"){const m=P3(X+0.3,Y+0.3,hard?H*0.75:H*0.5),m2=P3(X+0.3,Y+0.3,H*1.9);cx.strokeStyle="#333";cx.beginPath();cx.moveTo(m[0],m[1]);cx.lineTo(m2[0],m2[1]);cx.stroke();
+     const m3=P3(X+w-0.4,Y+0.3,hard?H*0.75:H*0.5),m4=P3(X+w-0.4,Y+0.3,H*1.5);cx.beginPath();cx.moveTo(m3[0],m3[1]);cx.lineTo(m4[0],m4[1]);cx.stroke()}
+    if(it.type==="maint"&&!down){box3(X+0.3,Y+d-0.05,0.5,0.35,0,6*k,"#5b6343",L);box3(X+1.1,Y+d-0.05,0.5,0.35,0,6*k,"#5b6343",L)}
+   }
+  }
+  return;
+ }
+ if(it.kind==="gen"){ shadowOf(X,Y,w,d,H); const gc=down?col:"#55603a";
+  box3(X+0.08,Y+0.12,w-0.16,d-0.24,0,H*0.85,gc,L*(running?1.08:0.95));
+  quad(P3(X+0.2,Y+0.25,H*0.85),P3(X+w-0.2,Y+0.25,H*0.85),P3(X+w-0.2,Y+d-0.3,H*0.85),P3(X+0.2,Y+d-0.3,H*0.85),shade("#3c4428",L));
+  box3(X+w*0.7,Y+d*0.25,0.12,0.12,H*0.85,6*k,"#2c2c2c",L);
+  const p=P3(X+w/2,Y+d,H*0.45); cx.font=`${Math.round(9*k+2)}px Consolas`; cx.fillStyle=`rgba(255,255,255,${0.85*L})`; cx.textAlign="center"; cx.fillText(it.kw+"kW"+(it.owned?"*":""),p[0],p[1]); return }
+ if(it.kind==="bat"){ shadowOf(X,Y,w,d,H); box3(X+0.05,Y+0.1,w-0.1,d-0.2,0,H,down?col:"#d4d8da",L); ribs(X+0.05,Y+0.1,w-0.1,d-0.2,0,H,6);
+  quad(P3(X+0.05,Y+d-0.1,H*0.55),P3(X+w-0.05,Y+d-0.1,H*0.55),P3(X+w-0.05,Y+d-0.1,H*0.7),P3(X+0.05,Y+d-0.1,H*0.7),shade("#3a8a5a",L)); return }
+ if(it.kind==="pv"){ // two rows of tilted panels on racks
+  const glare=ghi>200?Math.min(0.35,ghi/2500):0;
+  for(let r=0;r<2;r++){ const y0=Y+r+0.85, y1=Y+r+0.25, z0=3*k, z1=10*k;
+   [[0.15,0.85],[1.15,1.85]].forEach(([a])=>{box3(X+a,y0-0.05,0.06,0.06,0,z0,"#666",L);box3(X+a,y1,0.06,0.06,0,z1,"#666",L)});
+   [[0.1,1.9]].forEach(()=>{});
+   quad(P3(X+0.08,y0,z0),P3(X+w-0.08,y0,z0),P3(X+w-0.08,y1,z1),P3(X+0.08,y1,z1),shade(down?col:"#1d3557",L),"rgba(200,210,230,.5)");
+   cx.strokeStyle="rgba(160,180,220,.35)";cx.beginPath();for(let i=1;i<6;i++){const a=P3(X+0.08+i*(w-0.16)/6,y0,z0),b=P3(X+0.08+i*(w-0.16)/6,y1,z1);cx.moveTo(a[0],a[1]);cx.lineTo(b[0],b[1])}cx.stroke();
+   if(glare){quad(P3(X+0.08,y0,z0),P3(X+w-0.08,y0,z0),P3(X+w-0.08,y1,z1),P3(X+0.08,y1,z1),`rgba(255,250,220,${glare})`)}
+  } return }
+}
+// cached layers: terrain + ground + roads + back walls (behind items), and front walls + wire (in front of items)
+const STATIC={back:document.createElement("canvas"),front:document.createElement("canvas"),key:""};
+function staticLayers(r){
+ const bk=biomeKey(); const key=[Math.round(r.width),Math.round(r.height),N,TW.toFixed(2),bk,devicePixelRatio].join("|");
+ if(STATIC.key===key) return STATIC;
+ const B=BIOMES[bk], k=SK(), dpr=devicePixelRatio, saved=cx, gx=Math.floor(N/2);
+ for(const c of [STATIC.back,STATIC.front]){c.width=Math.max(1,r.width*dpr);c.height=Math.max(1,r.height*dpr)}
+ // ---- back layer
+ cx=STATIC.back.getContext("2d"); cx.setTransform(dpr,0,0,dpr,0,0);
+ cx.fillStyle=B.bg; cx.fillRect(0,0,r.width,r.height);
+ const R=rng2(N*7919+bk.length*31);
+ for(let i=0;i<900;i++){cx.fillStyle=R()<0.5?B.bg2:B.bg3;cx.globalAlpha=0.35;cx.beginPath();cx.ellipse(R()*r.width,R()*r.height,4+R()*22,2+R()*8,0,0,7);cx.fill()} cx.globalAlpha=1;
+ if(bk==="mountain"){ // distant ridgeline
+  cx.fillStyle="#6c6560";cx.beginPath();cx.moveTo(0,r.height*0.22);for(let x=0;x<=r.width;x+=40){cx.lineTo(x,r.height*(0.08+0.1*Math.abs(Math.sin(x*0.013+1.7))+0.05*R()))}cx.lineTo(r.width,0);cx.lineTo(0,0);cx.fill();
+  cx.fillStyle="#e9e9e4";for(let x=20;x<r.width;x+=110){const y=r.height*(0.08+0.1*Math.abs(Math.sin(x*0.013+1.7)));cx.beginPath();cx.moveTo(x,y);cx.lineTo(x-14,y+12);cx.lineTo(x+14,y+12);cx.fill()} }
+ // road outside the gate
+ for(let y=N;y<N+30;y++){const p=toScr(gx,y);poly([p,[p[0]+TW/2,p[1]+TH/2],[p[0],p[1]+TH],[p[0]-TW/2,p[1]+TH/2]],B.road)}
+ // vegetation and rocks outside the walls (seeded so it never jumps)
+ const inside=(px,py)=>{const [tx,ty]=toTile(px,py);return tx>=-1.6&&ty>=-1.6&&tx<=N+0.6&&ty<=N+0.6};
+ const nVeg={desert:90,jungle:520,forest:170,pine:200,rock:120}[B.veg]; const pts=[];
+ for(let i=0;i<nVeg*3&&pts.length<nVeg;i++){const px=R()*r.width,py=R()*r.height;if(inside(px,py))continue;const [tx]=toTile(px,py);if(Math.abs(toTile(px,py)[0]-gx)<1.2&&toTile(px,py)[1]>N)continue;pts.push([px,py,R()])}
+ pts.sort((a,b)=>a[1]-b[1]);
+ for(const [px,py,q] of pts) vegetation(B.veg,px,py,q,k);
+ // ground inside the perimeter
+ for(let x=0;x<N;x++)for(let y=0;y<N;y++){const p=toScr(x,y);const n=0.94+R()*0.1;poly([p,[p[0]+TW/2,p[1]+TH/2],[p[0],p[1]+TH],[p[0]-TW/2,p[1]+TH/2]],shade(B.ground,n))}
+ if(bk==="jungle"){for(let i=0;i<N*2;i++){const p=toScr(1+R()*(N-2),1+R()*(N-2));cx.fillStyle="rgba(70,110,50,.35)";cx.beginPath();cx.ellipse(p[0],p[1],6+R()*10,3+R()*4,0,0,7);cx.fill()}
+  for(let i=0;i<N/2;i++){const p=toScr(1+R()*(N-2),1+R()*(N-2));cx.fillStyle="rgba(60,70,60,.35)";cx.beginPath();cx.ellipse(p[0],p[1],8+R()*10,3+R()*4,0,0,7);cx.fill()}}
+ // gravel roads: gate road to the centre, cross road
+ for(let y=gx-1;y<N;y++){const p=toScr(gx,y);poly([p,[p[0]+TW/2,p[1]+TH/2],[p[0],p[1]+TH],[p[0]-TW/2,p[1]+TH/2]],shade(B.road,0.97+R()*0.06))}
+ for(let x=2;x<N-2;x++){const p=toScr(x,gx-1);poly([p,[p[0]+TW/2,p[1]+TH/2],[p[0],p[1]+TH],[p[0]-TW/2,p[1]+TH/2]],shade(B.road,0.97+R()*0.06))}
+ // back walls (y=0 row and x=0 column) with mesh
+ const hesco=(x,y)=>{box3(x,y,1,1,0,10*k,B.hesco,1,"rgba(0,0,0,.25)");cx.strokeStyle=B.mesh;cx.globalAlpha=0.5;cx.beginPath();
+  for(const f of [0.33,0.66]){let a=P3(x+f,y+1,0),b=P3(x+f,y+1,10*k);cx.moveTo(a[0],a[1]);cx.lineTo(b[0],b[1]);a=P3(x+1,y+f,0);b=P3(x+1,y+f,10*k);cx.moveTo(a[0],a[1]);cx.lineTo(b[0],b[1])}
+  let a=P3(x,y+1,5*k),b=P3(x+1,y+1,5*k);cx.moveTo(a[0],a[1]);cx.lineTo(b[0],b[1]);a=P3(x+1,y,5*k);b=P3(x+1,y+1,5*k);cx.moveTo(a[0],a[1]);cx.lineTo(b[0],b[1]);cx.stroke();cx.globalAlpha=1};
+ const wire=(x0,y0,x1,y1)=>{cx.strokeStyle="rgba(70,70,70,.7)";cx.lineWidth=0.8;const n=Math.hypot(x1-x0,y1-y0)*4;for(let i=0;i<n;i++){const u=i/n;const p=P3(x0+(x1-x0)*u,y0+(y1-y0)*u,3*k);cx.beginPath();cx.ellipse(p[0],p[1],3.2*k,2.6*k,0,0,7);cx.stroke()}cx.lineWidth=1};
+ wire(-0.7,-0.7,N+0.3,-0.7); wire(-0.7,-0.7,-0.7,N+0.3);
+ for(let i=0;i<N;i++){hesco(i,0); if(i>0) hesco(0,i)}
+ // ---- front layer (drawn after items so the front walls cover what is behind them)
+ cx=STATIC.front.getContext("2d"); cx.setTransform(dpr,0,0,dpr,0,0); cx.clearRect(0,0,r.width,r.height);
+ for(let i=1;i<N;i++){ if(i!==gx) hesco(i,N-1); hesco(N-1,i) }
+ box3(gx-0.15,N-1,0.15,1,0,16*k,"#9b9c92",1); box3(gx+1,N-1,0.15,1,0,16*k,"#9b9c92",1); // T-wall gate posts
+ wire(N+0.3,-0.7,N+0.3,N+0.3); wire(-0.7,N+0.3,gx-0.3,N+0.3); wire(gx+1.3,N+0.3,N+0.3,N+0.3);
+ cx=saved; STATIC.key=key; return STATIC;
+}
+function vegetation(v,px,py,q,k){
+ if(v==="jungle"){ const s=(10+q*12)*k; cx.fillStyle="rgba(0,0,0,.25)";cx.beginPath();cx.ellipse(px+4,py+s*0.5,s,s*0.45,0,0,7);cx.fill();
+  for(const [dx,dy,f,c] of [[0,0,1,"#2f6a2a"],[-s*0.4,-s*0.2,0.7,"#3b7d33"],[s*0.35,-s*0.35,0.65,"#468a3c"],[0,-s*0.5,0.5,"#55993f"]]){cx.fillStyle=c;cx.beginPath();cx.arc(px+dx,py+dy,s*f,0,7);cx.fill()}
+  if(q>0.8){cx.strokeStyle="#4f7a34";cx.lineWidth=2;for(let a=0;a<6;a++){cx.beginPath();cx.moveTo(px,py-s);cx.lineTo(px+Math.cos(a)*s*1.2,py-s+Math.sin(a)*s*0.5);cx.stroke()}cx.lineWidth=1} return }
+ if(v==="forest"){ const s=(8+q*8)*k; cx.fillStyle="#5a4630";cx.fillRect(px-1.5,py-s*0.2,3,s*0.8); cx.fillStyle="rgba(0,0,0,.2)";cx.beginPath();cx.ellipse(px+4,py+s*0.6,s*0.9,s*0.35,0,0,7);cx.fill();
+  cx.fillStyle=q>0.5?"#3f6a2c":"#4d7a33";cx.beginPath();cx.arc(px,py-s*0.6,s,0,7);cx.fill();cx.fillStyle="rgba(255,255,255,.08)";cx.beginPath();cx.arc(px-s*0.3,py-s*0.9,s*0.5,0,7);cx.fill(); return }
+ if(v==="pine"){ const s=(9+q*9)*k; cx.fillStyle="rgba(60,80,100,.18)";cx.beginPath();cx.ellipse(px+3,py+2,s*0.7,s*0.25,0,0,7);cx.fill();
+  for(let i=0;i<3;i++){const y=py-i*s*0.55, ww=s*(0.75-i*0.18);cx.fillStyle="#2d4a35";cx.beginPath();cx.moveTo(px,y-s*0.9);cx.lineTo(px-ww,y);cx.lineTo(px+ww,y);cx.fill();cx.fillStyle="#f2f5f7";cx.beginPath();cx.moveTo(px,y-s*0.9);cx.lineTo(px-ww*0.4,y-s*0.5);cx.lineTo(px+ww*0.4,y-s*0.5);cx.fill()} return }
+ if(v==="rock"||v==="desert"){ if(q<0.55){const s=(3+q*9)*k;cx.fillStyle=v==="rock"?"#77706a":"#a38d68";cx.beginPath();cx.ellipse(px,py,s*1.3,s*0.8,0,0,7);cx.fill();cx.fillStyle="rgba(255,255,255,.12)";cx.beginPath();cx.ellipse(px-s*0.3,py-s*0.3,s*0.6,s*0.35,0,0,7);cx.fill()}
+  else {const s=(3+q*4)*k;cx.fillStyle=v==="rock"?"#6f7048":"#8a8450";for(let i=0;i<4;i++){cx.beginPath();cx.arc(px+(i-1.5)*s*0.7,py-(i%2)*s*0.5,s*0.7,0,7);cx.fill()}}
+  if(v==="desert"&&q>0.9){cx.strokeStyle="rgba(255,240,210,.35)";cx.lineWidth=2;cx.beginPath();cx.arc(px,py+20,40*k,Math.PI*1.15,Math.PI*1.85);cx.stroke();cx.lineWidth=1} }
+}
+function drawBladders(hC){
+ const f=S.placed.find(p=>p.kind==="b"&&p.type==="fuel"); if(!f) return;
+ const frac=S.camp&&hC>=0?S.camp.level[hC]/S.camp.store:0.8;
+ const n=Math.max(1,Math.min(4,Math.round(+$("store").value/3000)));
+ for(let i=0;i<n;i++){ const [px,py]=toScr(f.x+2.5+(i%2)*1.0,f.y+0.4+Math.floor(i/2)*1.0); const cy=py+TH*0.5;
+  const rx=TW*0.36, ry=TH*0.36, hgt=1.5+9*frac*(TW/44);
+  cx.fillStyle="#1f2318";cx.beginPath();cx.ellipse(px,cy,rx,ry,0,0,7);cx.fill();
+  cx.fillStyle="#2c3122";cx.fillRect(px-rx,cy-hgt,rx*2,hgt);
+  cx.fillStyle=frac<0.15?"#5a3a2a":"#3d4430";cx.beginPath();cx.ellipse(px,cy-hgt,rx,ry,0,0,7);cx.fill();
+ }
+}
+const TROOPS={list:[],last:0};
+function doorOf(b){const [w,d]=fp(b);return [b.x+w/2,b.y+d+0.3]}
+function newTroop(bs,from){
+ const h=S.hour; const pref=(h>=6&&h<8)||(h>=11&&h<13)||(h>=17&&h<19)?["dfac"]:(h>=8&&h<17)?["toc","maint","aid","comms","fuel","rowpu","laun"]:["bill","mwr","hyg","latr"];
+ const P=bs.filter(b=>pref.includes(b.type)); const pick=()=>{const pool=P.length&&Math.random()<0.65?P:bs;return pool[Math.floor(Math.random()*pool.length)]};
+ const a=from||pick(); let b=pick(); if(b===a) b=bs[Math.floor(Math.random()*bs.length)];
+ const A=doorOf(a),B=doorOf(b); return {a,b,p:from?0:Math.random(),len:Math.max(0.5,Math.hypot(A[0]-B[0],A[1]-B[1])),ph:Math.random()*6}
+}
+function drawSoldiers(){
+ const bs=S.placed.filter(p=>p.kind==="b"); if(bs.length<2){TROOPS.list=[];return}
+ const now=performance.now(); const dt=Math.min(0.25,(now-(TROOPS.last||now))/1000); TROOPS.last=now;
+ const night=S.hour>=22||S.hour<5; const full=Math.min(40,Math.round(S.pax/8)); const want=night?Math.max(2,Math.round(full*0.12)):full;
+ while(TROOPS.list.length<want) TROOPS.list.push(newTroop(bs)); if(TROOPS.list.length>want) TROOPS.list.length=want;
+ const spd=S.playing?Math.min(5,0.7+S.rate*0.04):0.7;
+ for(const t of TROOPS.list){
+  if(!S.placed.includes(t.a)||!S.placed.includes(t.b)) Object.assign(t,newTroop(bs));
+  t.p+=dt*spd/t.len; if(t.p>=1) Object.assign(t,newTroop(bs,t.b));
+  const A=doorOf(t.a),B=doorOf(t.b); const [sx,sy]=toScr(A[0]+(B[0]-A[0])*t.p,A[1]+(B[1]-A[1])*t.p);
+  const k=Math.min(1.2,TW/36), bob=Math.sin(now/110+t.ph)*0.8;
+  cx.fillStyle="#5d5c3c";cx.fillRect(sx-1.4*k,sy-7*k+bob,2.8*k,6*k);cx.fillStyle="#caa27c";cx.beginPath();cx.arc(sx,sy-8.6*k+bob,1.7*k,0,7);cx.fill();
+ }
+}
+function drawSky(r){
+ const hf=S.camp?S.clock%24:S.hour+0.5; const day=hf>=6&&hf<19;
+ const u=day?(hf-6)/13:((hf>=19?hf-19:hf+5)/11); const x=r.width*(0.3+0.4*u), y=58-Math.sin(Math.PI*u)*34;
+ if(day){const g=cx.createRadialGradient(x,y,2,x,y,22);g.addColorStop(0,"rgba(255,240,170,1)");g.addColorStop(0.4,"rgba(255,215,90,.9)");g.addColorStop(1,"rgba(255,200,80,0)");cx.fillStyle=g;cx.beginPath();cx.arc(x,y,22,0,7);cx.fill()}
+ else{cx.fillStyle="rgba(230,235,245,.95)";cx.beginPath();cx.arc(x,y,8,0,7);cx.fill();cx.fillStyle="rgba(12,18,30,1)";cx.beginPath();cx.arc(x+4,y-2,7,0,7);cx.fill();
+  cx.fillStyle="rgba(255,255,255,.7)";for(let i=0;i<14;i++){const sx=(i*137.5%1)*r.width,sy=12+((i*71)%60);cx.fillRect((i*197)%r.width,sy,1.5,1.5)}}
+}
+function drawWeather(ghi){
+ if(!S.climate) return; const hr=S.hour; if(hr<7||hr>18) return;
+ const days=S.climate.seasons[S.season]; const clear=Math.max(...days.map(d=>d.ghi[hr]||0)); if(clear<120) return;
+ const cloud=Math.max(0,1-ghi/clear), dust=1-(+$("storm").value); if(cloud<0.3&&dust<0.1) return;
+ const pv=S.placed.filter(p=>p.kind==="pv"); let x0=2,x1=N-2,y0=2,y1=N-2;
+ if(pv.length){x0=Math.min(...pv.map(p=>p.x))-1;x1=Math.max(...pv.map(p=>p.x))+3;y0=Math.min(...pv.map(p=>p.y))-1;y1=Math.max(...pv.map(p=>p.y))+3}
+ const t=Date.now()/1000; const r=cv.getBoundingClientRect();
+ if(dust>=0.1){cx.fillStyle=`rgba(190,150,90,${Math.min(0.35,dust*0.4)})`;cx.fillRect(0,0,r.width,r.height)}
+ const inten=Math.min(1,Math.max(cloud,dust)); const col=dust>cloud?"200,165,110":"200,205,215";
+ for(let i=0;i<6;i++){const fx=x0+((i*0.37+t*0.03)%1)*(x1-x0), fy=y0+((i*0.61)%1)*(y1-y0); const [px,py]=toScr(fx,fy);
+  cx.fillStyle=`rgba(${col},${0.18+inten*0.3})`;cx.beginPath();cx.ellipse(px,py-30,TW*1.6,TH*1.2,0,0,7);cx.fill();
+  cx.fillStyle=`rgba(0,0,0,${0.08+inten*0.12})`;cx.beginPath();cx.ellipse(px+6,py+4,TW*1.4,TH*0.9,0,0,7);cx.fill()}
+ if(pv.length){const [px,py]=toScr((x0+x1)/2,y0);label((x0+x1)/2-0.5,y0-0.5,40,dust>cloud?`Dust: solar ${fmt((1-dust)*100,0)}%`:`Clouds: sun ${fmt((1-cloud)*100,0)}% of clear`,"#e6e0d0")}
+}
+
+// ======================= brief mode (guided scenario) =======================
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const BRIEF={i:-1,busy:false,saved:null};
+function tabGo(t){const b=document.querySelector(`#tabs button[data-t="${t}"]`);if(b)b.click()}
+function segGo(id,v){const b=document.querySelector(`#${id} button[data-v="${v}"]`);if(b&&!b.classList.contains("on"))b.click()}
+function setVal(id,v){$(id).value=v;$(id).dispatchEvent(new Event("input"))}
+async function settle(){await sleep(400);for(let i=0;i<40&&(evalTimer&&!S.sim);i++)await sleep(150);await sleep(900)}
+const BRIEF_STEPS=[
+ {t:"1. Pick the site",p:"Every FOB starts with a place. Click anywhere on the world map and the app pulls a year of real hourly sunlight and temperature from NASA POWER. For this brief: Western Iraq, hot and very sunny.",
+  run:async()=>{tabGo("site");const p=PRESETS.find(x=>/Iraq/.test(x.name))||PRESETS[0];if(p&&S.site!==p.name)await loadPreset(p);await settle()}},
+ {t:"2. Build the FOB",p:"A company FOB for 150 soldiers in tents (expeditionary). Buildings drop onto the grid like a base builder. Each one carries its power loads, and soldiers move between them through the day.",
+  run:async()=>{segGo("segType","exp");segGo("segSize","CO");await settle()}},
+ {t:"3. Priority tiers",p:"Tier 1 is mission critical (comms, TOC, SIPR/NIPR, critical medical, force protection, counter-UAS, pumps) and is never cut. Tier 2 is life support (HVAC, lighting, DFAC). Tier 3 is personal (phones, laptops, MWR). The optimizer pays a penalty for every kWh it cuts.",
+  run:async()=>tabGo("tiers")},
+ {t:"4. Optimize the power yard",p:"The app screens thousands of generator, battery and solar mixes with a fast simulation, then solves the Scioletti et al. (2017) mixed-integer model on the best few. The winner goes into the power yard; cables glow where power flows.",
+  run:async()=>{tabGo("dispatch");await optimize();const b=$("obPlace");if(b&&$("optBanner").style.display!=="none")b.click();await settle()}},
+ {t:"5. How good is the approximation?",p:"Model (U) linearizes the battery physics. Here the error is measured against the nonlinear equations the same way as the paper's Section 4.4: battery power error, net energy error and battery aging.",
+  run:async()=>tabGo("model")},
+ {t:"6. PACE plan",p:"The app recommends a PACE plan for the power sources. During the deployment it steps down automatically as fuel runs low, shedding tiers to stretch the fuel, and steps back up after a delivery.",
+  run:async()=>tabGo("pace")},
+ {t:"7. Run the deployment",p:"Three months at about two days per second. Convoys, CH-47 sling loads and C-130 airdrops refill the fuel bladders. Added friction: a 14-day resupply cut starting on day 20 and two enemy strikes a month. Watch the PACE badge and the event log.",
+  run:async()=>{tabGo("resupply");setVal("cut",14);setVal("cutStart",20);setVal("threat",2);await sleep(300);setClock(0);setVal("speed",69);S.stopAt=90*24;S.playing=true;updPlayBtn()}},
+ {t:"8. What happened",p:()=>{const C=S.camp;if(!C)return"No playback data.";const h=Math.min(C.H-1,Math.floor(S.clock));const ev=C.ev.filter(e=>e.h<=h);
+   const del=ev.filter(e=>e.cum).length,late=(ev.filter(e=>e.cum).pop()||{cum:{late:0}}).cum.late,cas=(ev.filter(e=>e.cum).pop()||{cum:{cas:0}}).cum.cas;
+   let worst=0,out=0;for(let k=0;k<=h;k++){worst=Math.max(worst,C.paceLv[k]);out+=C.fuelOut[k]}const hits=C.strikes.filter(s=>s.h<=h&&!s.icp).length,icp=C.strikes.filter(s=>s.h<=h&&s.icp).length;
+   return `In the first ${Math.floor(h/24)} days: ${del} deliveries (${late} late), lowest PACE level <b>${"PACE"[worst]}</b>, ${out} hours with fuel out, ${hits} strike hits and ${icp} drones intercepted, ${fmt(cas,2)} expected casualties on resupply runs. The Resupply tab now shows fuel over the whole deployment.`},
+  run:async()=>{S.playing=false;updPlayBtn();tabGo("resupply")}},
+ {t:"9. Compare courses of action",p:"COA 1 is the optimized hybrid. COA 2 is the same FOB on generators only. Side by side: buy cost, total cost, fuel per day, convoys, soldier exposure and expected casualties. Green is best in each row.",
+  run:async()=>{if(!S.sim)return;$("coaName").value="Brief: optimized hybrid";saveCoa();const keep=COAS[COAS.length-1];
+   S.placed=S.placed.filter(p=>p.kind!=="pv"&&p.kind!=="bat");changed();await settle();$("coaName").value="Brief: generators only";saveCoa();
+   await applyState(keep.state);await settle();tabGo("coa")}},
+ {t:"10. Deliverables",p:"Everything rolls into the one-page technical spec sheet (tick 2-page for an appendix with the COAs, fuel over the deployment and the approximation error). Excel exports the numbers; Save file hands the scenario to a teammate. Exit returns the friction settings to how they were.",
+  run:async()=>{}},
+];
+function renderBrief(){
+ const el=$("brief"); if(BRIEF.i<0){el.style.display="none";return}
+ const s=BRIEF_STEPS[BRIEF.i]; const p=typeof s.p==="function"?s.p():s.p;
+ el.style.display="block";
+ el.innerHTML=`<h3>${s.t}</h3><p>${p}</p><div class="bnav"><button class="small" id="bBack" ${BRIEF.i===0||BRIEF.busy?"disabled":""}>Back</button>
+  <button class="small primary" id="bNext" ${BRIEF.busy?"disabled":""}>${BRIEF.busy?"Working...":BRIEF.i===BRIEF_STEPS.length-1?"Finish":"Next"}</button>
+  <span class="note">step ${BRIEF.i+1} of ${BRIEF_STEPS.length}</span><button class="small" id="bExit" style="margin-left:auto">Exit</button></div>`;
+ $("bBack").onclick=()=>briefGo(BRIEF.i-1); $("bNext").onclick=()=>BRIEF.i===BRIEF_STEPS.length-1?briefExit():briefGo(BRIEF.i+1); $("bExit").onclick=briefExit;
+}
+async function briefGo(i){
+ if(BRIEF.busy||i<0||i>=BRIEF_STEPS.length) return;
+ if(BRIEF.i<0) BRIEF.saved={cut:$("cut").value,cutStart:$("cutStart").value,threat:$("threat").value};
+ BRIEF.i=i; BRIEF.busy=true; renderBrief();
+ try{await BRIEF_STEPS[i].run()}catch(e){toast("Brief step failed: "+e)}
+ BRIEF.busy=false; renderBrief();
+}
+function briefExit(){
+ S.playing=false;S.stopAt=null;updPlayBtn();
+ if(BRIEF.saved){setVal("cut",BRIEF.saved.cut);setVal("cutStart",BRIEF.saved.cutStart);setVal("threat",BRIEF.saved.threat)}
+ BRIEF.i=-1;BRIEF.saved=null;renderBrief();
+}
+
+// ======================= Excel export =======================
+function exportXlsx(){
+ if(typeof XLSX==="undefined"){toast("Excel library missing (vendor/xlsx.full.min.js)");return}
+ const r=S.sim; if(!r||!S.inp){toast("Nothing to export yet");return}
+ const wb=XLSX.utils.book_new(), d=designFromMap(), rs=resupplyCalc(), C=S.camp, ser=r.series;
+ const sum=[["FOB Power Planner export",new Date().toLocaleString()],[],["Site",S.site],["FOB",`${S.size} ${S.type==="exp"?"expeditionary":"existing"}`],["Personnel",S.pax],["Operating period (months)",S.months],["Sample days per season",S.days],
+  ["Generators",d.generators.map(g=>g.count+" x "+g.kw+" kW").join(", ")||"none"],["Battery (kWh)",d.battery?d.battery.kwh:0],["Solar (kW)",d.pv_kw],[],
+  ["Total cost ($)",Math.round(r.total)],["Fuel cost ($)",Math.round(r.fuel_cost)],["Lost-power penalty ($)",Math.round(r.penalty_cost)],["Fuel (gal)",Math.round(r.fuel_gal)],["Fuel per day (gal)",+(r.fuel_gal/(S.months*30.4)).toFixed(1)],
+  ["Unserved Tier 1 (kWh)",Math.round(r.unserved_kwh[0])],["Unserved Tier 2 (kWh)",Math.round(r.unserved_kwh[1])],["Unserved Tier 3 (kWh)",Math.round(r.unserved_kwh[2])],
+  ["Fully burdened fuel cost ($/gal)",+S.inp.fuel_cost.toFixed(2)],["Deliveries per month",+rs.trips.toFixed(2)],["Ground convoys per month",+rs.convoysPerMonth.toFixed(2)],["Soldier-hours exposed per month",Math.round(rs.expo)],["Expected casualties per year",+(rs.cas*12).toFixed(3)]];
+ if(S.opt&&S.opt.costs){sum.push([],["Optimizer objective, model U ($)",Math.round(S.opt.costs.objective)],["Optimizer design",S.opt.design.generators.map(g=>g.count+" x "+g.kw+" kW").join(", ")+`; ${S.opt.design.battery?S.opt.design.battery.kwh:0} kWh; ${S.opt.design.pv_kw} kW PV`],["MIP gap",S.opt.mip_gap||0]);
+  const e=S.opt.approx_error; if(e) sum.push(["Approx. error: max discharge over-estimate (kW), eq. 26",e.max_overestimate_discharge_kw],["Approx. error: max charge under-estimate (kW), eq. 27",e.max_underestimate_charge_kw],["Approx. error: net energy, % of demand, eq. 28",e.net_energy_error_pct_of_demand],["Battery aging nonlinear / linear (%), eq. 29",e.lifecycle_ratio_pct])}
+ if(C) sum.push([],["Playback seed (luck #)",S.seed],["Playback: deliveries",C.totals.deliveries],["Playback: late deliveries",C.totals.late],["Playback: hours with fuel out",C.totals.outH],["Playback: strike hits",C.totals.hits],["Playback: drones intercepted",C.totals.intercepts]);
+ const ws1=XLSX.utils.aoa_to_sheet(sum); ws1["!cols"]=[{wch:48},{wch:40}]; XLSX.utils.book_append_sheet(wb,ws1,"Summary");
+ const T=S.inp.tier_loads[0].length; const hr=[["Season","Sample day","Hour","Load T1 kW","Load T2 kW","Load T3 kW","Solar used kW","Generators kW","Battery out kW","Battery in kW","Grid kW","Battery SOC","Fuel gal","Shed T1 kW","Shed T2 kW","Shed T3 kW","Generators running"]];
+ for(let t=0;t<T;t++){hr.push([SEASONS[Math.floor(t/(S.days*24))],Math.floor(t/24)%S.days+1,t%24,...[0,1,2].map(i=>+(+S.inp.tier_loads[i][t]).toFixed(2)),ser.pv[t],ser.gen[t],ser.bat_out[t],ser.bat_in[t],ser.grid[t],ser.soc[t],ser.fuel_gal[t],...[0,1,2].map(i=>shedOf(ser,i,t)),ser.gen_units[t]])}
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(hr),"Hourly (sample days)");
+ if(C){const days=Math.floor(C.H/24); const del=new Array(days).fill(0), nd=new Array(days).fill(0), hits=new Array(days).fill(0);
+  C.ev.forEach(e=>{const dd=Math.floor(e.h/24);if(dd>=days)return;if(e.cum){del[dd]+=e.gal||0;nd[dd]++}if(e.type==="strike"&&!e.s.icp)hits[dd]++});
+  const dr=[["Day","Season","Fuel at end of day (gal)","Lowest fuel (gal)","Fuel used (gal)","Fuel delivered (gal)","Deliveries","Lowest PACE level","Hours with fuel out","Strike hits"]]; let prev=C.store;
+  for(let dd=0;dd<days;dd++){let mn=1e9,pl=0,out=0;for(let k=0;k<24;k++){const h=dd*24+k;mn=Math.min(mn,C.level[h]);pl=Math.max(pl,C.paceLv[h]);out+=C.fuelOut[h]}const end=C.level[dd*24+23];
+   dr.push([dd,SEASONS[campIdx(dd*24)[0]],Math.round(end),Math.round(mn),Math.round(prev+del[dd]-end),Math.round(del[dd]),nd[dd],"PACE"[pl],out,hits[dd]]);prev=end}
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(dr),"Deployment by day");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["Day","Hour","Type","Event"],...C.ev.map(e=>[Math.floor(e.h/24),e.h%24,e.type,e.txt])]),"Events");}
+ if(COAS.length){const keys=[["Site","site"],["FOB","size"],["Design","design"],["Buy cost ($)","capex"],["Total cost ($)","total"],["Fuel / day (gal)","fuelDay"],["Solar share (%)","solar"],["Tier 1 power (%)","t1"],["Tier 2 unserved (kWh)","t2"],["Tier 3 unserved (kWh)","t3"],["Ground convoys / month","convoys"],["Deliveries / month","trips"],["Soldier-hours exposed / month","expo"],["Expected casualties / year","casYr"],["Playback: hours fuel out","fuelOutH"],["Playback: late deliveries","late"],["Playback: strike hits","hits"]];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([["",...COAS.map(c=>c.name)],...keys.map(([l,k])=>[l,...COAS.map(c=>{const v=c.m[k];return typeof v==="number"?+v.toFixed(3):v})])]),"COAs")}
+ const inp=[["Buildings (planning loads)"],["Building","Item","Tier","kW","Profile","Source"]];
+ for(const [k,c] of Object.entries(CAT)){c.items.forEach((it,ix)=>inp.push([c.name,it[0],tierOf(k,ix)+1,it[2],it[3],c.est?"estimate":""]));if(c.hv)inp.push([c.name,"HVAC (full load)",tierOf(k,"hv")+1,+(c.hv*shelterF()).toFixed(2),"temperature",c.est?"estimate":""])}
+ inp.push([],["Generators"],["Size","kW","Cost ($)","b (gal/kWh)","c (gal/h)","Source"],...LIB.gens.map(g=>[g.name,g.kw,g.cost,g.b,g.c,g.src]));
+ inp.push([],["Batteries"],["Size","kWh","Cost ($)","Source"],...LIB.bats.map(b=>[b.name,b.kwh,b.cost,b.src]));
+ inp.push([],["Resupply methods"],["Method","Share (%)","$/gal","gal/trip","soldier-h/trip","casualties/trip","reliability","lead time (h)","Source"],...MODES.map(m=>[m.name,m.share,m.fbcf,m.gal,m.exp,m.cas,m.rel,m.lead,m.src]));
+ XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(inp),"Inputs and sources");
+ const fn=`FOB_power_${String(S.site||"site").replace(/[^A-Za-z0-9]+/g,"_")}_${S.size}_${new Date().toISOString().slice(0,10)}.xlsx`;
+ XLSX.writeFile(wb,fn); toast("Excel saved to your Downloads folder: "+fn);
+}
+
+// ======================= scenario files =======================
+function esc(v){return String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function snapshotState(){
+ return {type:S.type,size:S.size,pax:S.pax,months:S.months,days:S.days,site:S.siteRef,
+  placed:S.placed.map(p=>({kind:p.kind,type:p.type,kw:p.kw,kwh:p.kwh,name:p.name,owned:!!p.owned,x:p.x,y:p.y})),
+  tierOv:{...S.tierOv},sliders:Object.fromEntries(SLIDER_IDS().map(id=>[id,$(id).value])),
+  checks:Object.fromEntries(["nplus1","gridOn","genFail","fuelOverride","paceAuto"].map(id=>[id,$(id).checked])),
+  modes:MODES.map(m=>({...m})),seed:S.seed,start:S.startSeason,pace:S.pace?JSON.parse(JSON.stringify(S.pace)):null,biome:$("biome").value};
+}
+function saveScenarioFile(){
+ const blob=new Blob([JSON.stringify({format:"fob-power-planner-scenario",version:1,saved:new Date().toISOString(),state:snapshotState(),coas:COAS},null,1)],{type:"application/json"});
+ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`FOB_scenario_${String(S.site||"site").replace(/[^A-Za-z0-9]+/g,"_")}_${S.size}_${new Date().toISOString().slice(0,10)}.json`;
+ document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),3000); toast("Scenario saved to your Downloads folder");
+}
+function cleanState(s){ // accept only known fields and values from a file
+ const num=(v,d)=>Number.isFinite(+v)?+v:d;
+ const placed=(Array.isArray(s.placed)?s.placed:[]).filter(p=>p&&["b","gen","pv","bat"].includes(p.kind)&&(p.kind!=="b"||CAT[p.type])&&(p.kind!=="gen"||LIB.gens.some(g=>g.kw===+p.kw))&&(p.kind!=="bat"||LIB.bats.some(b=>b.kwh===+p.kwh)))
+  .map(p=>({kind:p.kind,type:p.kind==="b"?p.type:undefined,kw:p.kind==="gen"?+p.kw:undefined,kwh:p.kind==="bat"?+p.kwh:undefined,owned:!!p.owned,x:Math.round(num(p.x,1)),y:Math.round(num(p.y,1))}));
+ const sliders={}; for(const id of SLIDER_IDS()) if(s.sliders&&s.sliders[id]!=null&&Number.isFinite(+s.sliders[id])) sliders[id]=+s.sliders[id];
+ const checks={}; for(const id of ["nplus1","gridOn","genFail","fuelOverride","paceAuto"]) if(s.checks&&id in s.checks) checks[id]=!!s.checks[id];
+ const modes=Array.isArray(s.modes)?MODES.map(m=>{const f=s.modes.find(x=>x&&x.id===m.id)||{};const o={...m};for(const k of ["share","fbcf","gal","exp","cas","rel","lead"]) if(Number.isFinite(+f[k])) o[k]=+f[k];return o}):null;
+ const site=s.site&&typeof s.site==="object"?{name:String(s.site.name||""),file:typeof s.site.file==="string"&&/^climate_[-0-9.]+_[-0-9.]+\.json$/.test(s.site.file)?s.site.file:undefined,lat:num(s.site.lat,null),lon:num(s.site.lon,null)}:null;
+ const tierOv={}; if(s.tierOv) for(const [k,v] of Object.entries(s.tierOv)) if(/^[a-z]+:(\d+|hv)$/.test(k)&&[0,1,2].includes(+v)) tierOv[k]=+v;
+ const pace=Array.isArray(s.pace)?s.pace.slice(0,4).map(l=>({src:String(l.src||""),kw:num(l.kw,0),fuel:!!l.fuel,bat:!!l.bat,energy:l.energy!=null?num(l.energy,0):undefined,tiers:[0,1,2].map(i=>!!(l.tiers&&l.tiers[i]))})):null;
+ return {type:s.type==="exist"?"exist":"exp",size:s.size==="BN"?"BN":"CO",pax:Math.max(50,Math.min(1200,num(s.pax,150))),months:Math.max(1,Math.min(36,num(s.months,12))),days:Math.max(1,Math.min(14,num(s.days,1))),
+  site,placed,tierOv,sliders,checks,modes,biome:(s.biome in BIOMES)?s.biome:"auto",seed:Math.abs(Math.round(num(s.seed,20271)))||20271,start:[0,1,2,3].includes(+s.start)?+s.start:2,pace};
+}
+async function openScenarioFile(file){
+ let j; try{j=JSON.parse(await file.text())}catch(e){toast("That file is not a scenario (not JSON)");return}
+ if(!j||j.format!=="fob-power-planner-scenario"||!j.state){toast("That file is not a FOB Power Planner scenario");return}
+ if(Array.isArray(j.coas)){let added=0;for(const c of j.coas){if(c&&c.name&&c.state&&c.m&&!COAS.some(x=>x.name===c.name)){COAS.push({name:String(c.name).slice(0,60),saved:String(c.saved||""),state:cleanState(c.state),m:c.m});added++}}if(added){storeCoas();renderCoas()}}
+ await applyState(cleanState(j.state)); toast(`Opened scenario from ${file.name}`);
+}
+
+// ======================= spec sheet appendix (2-page option) =======================
+function chartImg(cfg,w,h){
+ const oc=Chart.defaults.color, ob=Chart.defaults.borderColor; Chart.defaults.color="#222"; Chart.defaults.borderColor="#ccc";
+ const c=document.createElement("canvas"); c.width=w; c.height=h; c.style.cssText="position:fixed;left:-9999px;top:0"; document.body.appendChild(c);
+ cfg.options=Object.assign({},cfg.options,{responsive:false,animation:false,devicePixelRatio:2});
+ let url=""; try{const ch=new Chart(c,cfg); url=ch.toBase64Image(); ch.destroy()}catch(e){} c.remove(); Chart.defaults.color=oc; Chart.defaults.borderColor=ob; return url;
+}
+function appendixHtml(){
+ const C=S.camp, o=S.opt; let h=`<div style="break-before:page;page-break-before:always"></div><h1>Appendix: deployment playback, courses of action, model error</h1>`;
+ if(C){const days=Math.floor(C.H/24);const lv=[],pc=[];for(let d=0;d<days;d++){let mn=1e9,mx=0;for(let k=0;k<24;k++){mn=Math.min(mn,C.level[d*24+k]);mx=Math.max(mx,C.paceLv[d*24+k])}lv.push(Math.round(mn));pc.push(mx)}
+  const img=chartImg({type:"bar",data:{labels:lv.map((_,d)=>d%30===0?"D+"+d:""),datasets:[{data:lv,backgroundColor:pc.map(p=>["#3a9a68","#c8932e","#d0662a","#c0392b"][p]),barPercentage:1,categoryPercentage:1}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{autoSkip:false,maxRotation:0}},y:{beginAtZero:true,max:C.store,title:{display:true,text:"gal"}}}}},760,210);
+  h+=`<h2>Fuel over the ${S.months}-month deployment</h2>${img?`<img src="${img}" style="width:100%">`:""}
+  <div>Lowest fuel each day; colour = PACE level (green P, gold A, orange C, red E). Storage ${fmt(C.store,0)} gal, reorder at ${fmt(C.rl,0)} gal. ${C.totals.deliveries} deliveries (${C.totals.late} late), ${fmt(C.totals.outH,0)} h with fuel out, ${C.totals.hits} strike hits, ${C.totals.intercepts} drones intercepted. Resupply cut: ${$("cut").value} days from D+${$("cutStart").value}. Threat: ${$("threat").value} strikes/month. Auto PACE: ${$("paceAuto").checked?`A below ${Math.round($("paceA").value*100)}%, C below ${Math.round($("paceC").value*100)}%, E below ${Math.round($("paceE").value*100)}% fuel`:"off"}. Delays, strikes and repair times are planning estimates.</div>`}
+ if(COAS.length){const keys=[["Design","design",v=>esc(v)],["Buy cost","capex",money],["Total cost","total",money],["Fuel / day","fuelDay",v=>fmt(v,0)+" gal"],["Solar share","solar",v=>fmt(v,0)+"%"],["Tier 1 power","t1",v=>fmt(v,2)+"%"],["Convoys / month","convoys",v=>fmt(v,1)],["Soldier-h exposed / month","expo",v=>fmt(v,0)],["Expected casualties / yr","casYr",v=>fmt(v,2)],["Playback: hours fuel out","fuelOutH",v=>v==null?"-":fmt(v,0)]];
+  h+=`<h2>Courses of action</h2><table><tr><th></th>${COAS.map(c=>`<th>${esc(c.name)}</th>`).join("")}</tr>${keys.map(([l,k,f])=>`<tr><td>${l}</td>${COAS.map(c=>`<td>${f(c.m[k])}</td>`).join("")}</tr>`).join("")}</table>`}
+ if(o&&o.approx_error){const e=o.approx_error; const n=S.days*24;
+  const img=chartImg({type:"line",data:{labels:hourLabels(n),datasets:[{label:"Discharge power error (kW)",data:seasonSlice(e.series_discharge_err),borderColor:"#1f77b4",pointRadius:0,borderWidth:1.2},{label:"Charge power error (kW)",data:seasonSlice(e.series_charge_err),borderColor:"#d62728",pointRadius:0,borderWidth:1.2}]},options:{plugins:{legend:{position:"bottom"}},scales:{x:{ticks:{autoSkip:false,maxRotation:0}}}}},760,190);
+  h+=`<h2>Approximation error of model (U) vs the nonlinear model (P)</h2><table>
+  <tr><td>Max over-estimate of battery discharge power (eq. 26)</td><td>${e.max_overestimate_discharge_kw} kW (paper: up to 2.8 kW)</td></tr>
+  <tr><td>Max under-estimate of charge power (eq. 27)</td><td>${e.max_underestimate_charge_kw} kW (paper: up to 1 kW)</td></tr>
+  <tr><td>Net energy error, % of demand (eq. 28)</td><td>${e.net_energy_error_pct_of_demand}% (paper: under 0.02%)</td></tr>
+  <tr><td>Battery aging, nonlinear / linear (eq. 29)</td><td>${e.lifecycle_ratio_pct}%</td></tr>
+  <tr><td>Same design, nonlinear physics + myopic dispatch</td><td>${fmt(o.nonlinear_check.fuel_gal,0)} gal vs MILP ${fmt(o.costs.fuel_gal,0)} gal</td></tr></table>${img?`<img src="${img}" style="width:100%">`:""}`}
+ else h+=`<h2>Approximation error</h2><div>Press Optimize before printing to include the model-error measurements.</div>`;
+ if(C){const hl=C.ev.filter(e=>e.type!=="info").slice(0,14);if(hl.length)h+=`<h2>Playback highlights</h2><table>${hl.map(e=>`<tr><td style="white-space:nowrap">${stamp(e.h)}</td><td>${esc(e.txt)}</td></tr>`).join("")}</table>`}
+ return h;
+}
+
+// ======================= COA compare =======================
+const COA_KEY="fobCOAs_v1"; let COAS=[];
+try{COAS=JSON.parse(localStorage.getItem(COA_KEY)||"[]")}catch(e){COAS=[]}
+function storeCoas(){try{localStorage.setItem(COA_KEY,JSON.stringify(COAS))}catch(e){}}
+const SLIDER_IDS=()=>[...Object.keys(OUT),"fuelCost"];
+function saveCoa(){
+ const r=S.sim; if(!r||!S.inp){toast("Wait for the simulation to finish");return}
+ const d=designFromMap(), rs=resupplyCalc(), C=S.camp, w=S.inp.weights[0];
+ const capex=d.generators.reduce((a,g)=>a+LIB.gens.find(x=>x.name===g.name).cost*g.count,0)+d.pv_kw*S.inp.pv.cost+(d.battery?LIB.bats.find(b=>b.kwh===d.battery.kwh).cost:0);
+ const loadKwh=S.inp.tier_loads.reduce((a,row)=>a+row.reduce((x,y)=>x+y,0),0)*w, pvKwh=r.series.pv.reduce((a,b)=>a+b,0)*w;
+ const t1=S.inp.tier_loads[0].reduce((a,b)=>a+b,0)*w;
+ const name=($("coaName").value||"").trim()||("COA "+(COAS.length+1));
+ const dup=COAS.findIndex(c=>c.name===name); if(dup>=0) COAS.splice(dup,1); // same name replaces the old one
+ COAS.push({name,saved:new Date().toISOString(),
+  state:snapshotState(),
+  m:{design:d.generators.map(g=>g.count+"×"+g.kw+"kW").join(" + ")+(d.battery?` | ${d.battery.kwh} kWh`:"")+` | ${d.pv_kw} kW PV`,site:S.site,size:`${S.size} ${S.type==="exp"?"expeditionary":"existing"}, ${S.pax} pax`,
+   capex,total:r.total,fuelDay:r.fuel_gal/(S.months*30.4),solar:pvKwh/Math.max(1,loadKwh)*100,t1:(1-r.unserved_kwh[0]/Math.max(1,t1))*100,t2:r.unserved_kwh[1],t3:r.unserved_kwh[2],
+   convoys:rs.convoysPerMonth,trips:rs.trips,expo:rs.expo,casYr:rs.cas*12,fuelOutH:C?C.totals.outH:null,late:C?C.totals.late:null,hits:C?C.totals.hits:null}});
+ storeCoas(); $("coaName").value=""; renderCoas(); toast(`Saved ${name}`);
+}
+function renderCoas(){
+ if(!COAS.length){$("coaTable").innerHTML="No COAs saved yet.";if(charts.chCoa){charts.chCoa.destroy();delete charts.chCoa}return}
+ const rows=[["Site","site",null,esc],["FOB","size",null,esc],["Design","design",null,esc],["Buy cost","capex","low",money],["Total cost (buy + fuel + penalties)","total","low",money],
+  ["Fuel / day (gal)","fuelDay","low",v=>fmt(v,0)],["Solar share","solar","high",v=>fmt(v,0)+"%"],["Tier 1 power","t1","high",v=>fmt(v,2)+"%"],["Tier 2 unserved (kWh)","t2","low",v=>fmt(v,0)],["Tier 3 unserved (kWh)","t3","low",v=>fmt(v,0)],
+  ["Ground convoys / month","convoys","low",v=>fmt(v,1)],["Deliveries / month","trips","low",v=>fmt(v,1)],["Soldier-hours exposed / month","expo","low",v=>fmt(v,0)],["Expected casualties / year","casYr","low",v=>fmt(v,2)],
+  ["Playback: hours with fuel out","fuelOutH","low",v=>v==null?"-":fmt(v,0)],["Playback: late deliveries","late","low",v=>v==null?"-":fmt(v,0)],["Playback: strike hits","hits",null,v=>v==null?"-":fmt(v,0)]];
+ let h='<div style="overflow-x:auto"><table class="t"><tr><th></th>'+COAS.map((c,i)=>`<th><b style="color:var(--ink)">${esc(c.name)}</b><br><button class="small" data-load="${i}">Load</button> <button class="small" data-del="${i}">Remove</button></th>`).join("")+"</tr>";
+ for(const [lab,k,better,f] of rows){const vals=COAS.map(c=>c.m[k]); let best=null,worst=null;
+  if(better&&COAS.length>1&&vals.every(v=>typeof v==="number")){const mx=Math.max(...vals),mn=Math.min(...vals);if(mx-mn>1e-9){best=better==="low"?mn:mx;worst=better==="low"?mx:mn}}
+  h+=`<tr><td class="note">${lab}</td>`+vals.map(v=>`<td class="${v===best?"coa-best":v===worst?"coa-worst":""}">${f(v)}</td>`).join("")+"</tr>"}
+ $("coaTable").innerHTML=h+"</table></div>";
+ $("coaTable").querySelectorAll("[data-load]").forEach(b=>b.onclick=()=>loadCoa(COAS[+b.dataset.load]));
+ $("coaTable").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{const i=+b.dataset.del;const c=COAS[i];if(b.dataset.armed){COAS.splice(i,1);storeCoas();renderCoas();toast(`Removed ${c.name}`)}else{b.dataset.armed=1;b.textContent="Click again";setTimeout(()=>{b.textContent="Remove";delete b.dataset.armed},2500)}});
+ chart("chCoa",{type:"bar",data:{labels:COAS.map(c=>c.name),datasets:[{label:"Total cost ($M)",data:COAS.map(c=>c.m.total/1e6),backgroundColor:"#d9a441",yAxisID:"y"},{label:"Expected casualties / year",data:COAS.map(c=>c.m.casYr),backgroundColor:"#e0574f",yAxisID:"y2"}]},
+  options:{animation:false,plugins:{legend:{position:"bottom"}},scales:{y:{title:{display:true,text:"$M"},beginAtZero:true},y2:{position:"right",beginAtZero:true,grid:{display:false},title:{display:true,text:"casualties / yr"}}}}});
+}
+async function loadCoa(c){await applyState(c.state);toast(`Loaded ${c.name}`)}
+async function applyState(s){
+ S.playing=false; updPlayBtn();
+ S.type=s.type;S.size=s.size;S.pax=s.pax;S.months=s.months;S.days=s.days;S.seed=s.seed||S.seed;S.startSeason=s.start??2;$("selSeason").value=S.startSeason;
+ document.querySelectorAll("#segType button").forEach(b=>b.classList.toggle("on",b.dataset.v===s.type));
+ document.querySelectorAll("#segSize button").forEach(b=>b.classList.toggle("on",b.dataset.v===s.size));
+ $("gridBox").style.opacity=s.type==="exist"?1:.45;
+ for(const [id,v] of Object.entries(s.sliders||{})) if($(id)) $(id).value=v;
+ for(const [id,v] of Object.entries(s.checks||{})) if($(id)) $(id).checked=v;
+ $("fuelCost").disabled=!$("fuelOverride").checked; $("biome").value=s.biome||"auto";
+ if(s.modes) MODES=s.modes.map(m=>({...m})); buildModeSliders();
+ S.tierOv={...(s.tierOv||{})}; S.opt=null; S.pace=s.pace?JSON.parse(JSON.stringify(s.pace)):null; S.sel=null; inspect();
+ $("optBanner").style.display="none"; S.dispMode="sim"; document.querySelectorAll("#segDisp button").forEach(x=>x.classList.toggle("on",x.dataset.v==="sim"));
+ N=S.pax>400?50:(S.pax>220?38:28); S.placed=s.placed.map(p=>({...p,id:S.uid++})); resize(); syncOutputs(); TROOPS.list=[];
+ S._biomeBuilt=null; // a loaded layout is kept as saved, even if the region kit would differ
+ if(s.site&&s.site.name&&s.site.name!==S.site){ if(s.site.file){const p=PRESETS.find(x=>x.file===s.site.file)||s.site;await loadPreset(p)} else if(s.site.lat!=null) await loadPoint(s.site.lat,s.site.lon); else changed() }
+ else changed();
+ S._biomeBuilt=biomeKey(); S._std=stdKey(); renderKitNote(); biomeNote();
+}
+
+// ======================= wiring =======================
+function seg(id,cb){$(id).querySelectorAll("button").forEach(b=>b.onclick=()=>{$(id).querySelectorAll("button").forEach(x=>x.classList.toggle("on",x===b));cb(b.dataset.v)})}
+seg("segType",v=>{S.type=v;$("gridBox").style.opacity=v==="exist"?1:.45;if(v==="exist"){$("pvMax").value=Math.max(+$("pvMax").value,400);$("gridOn").checked=true}else{$("gridOn").checked=false}syncOutputs();template()});
+seg("segSize",v=>{S.size=v;S.pax=v==="BN"?600:150;$("pax").value=S.pax;if(v==="BN")$("pvMax").value=Math.max(+$("pvMax").value,500);syncOutputs();template()});
+seg("segDisp",v=>{S.dispMode=v;renderDispatch();buildCampaign();draw()});
+seg("segCostView",v=>{S.costView=v;if(charts.chCostRun){charts.chCostRun.destroy();delete charts.chCostRun}renderTrends()});
+seg("segEnergyView",v=>{S.energyView=v;renderTrends()});
+document.querySelectorAll("#tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll("#tabs button").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll(".tabpane").forEach(p=>p.classList.toggle("show",p.id==="tab-"+b.dataset.t));if(b.dataset.t==="site"&&MAP)setTimeout(()=>MAP.invalidateSize(),50);if(b.dataset.t==="trends")setTimeout(renderTrends,30)});
+const OUT={pax:["oPax",v=>v],months:["oMonths",v=>v],days:["oDays",v=>v],pen2:["oPen2",v=>"$"+v],pen3:["oPen3",v=>"$"+v],overage:["oOver",v=>v],spin:["oSpin",v=>v],
+ pvMax:["oPvMax",v=>v],soil:["oSoil",v=>Math.round(v*100)+"%"],pvCost:["oPvCost",v=>"$"+v],gridRel:["oGridRel",v=>Math.round(v*100)+"%"],gridKw:["oGridKw",v=>v],gridPrice:["oGridPrice",v=>"$"+(+v).toFixed(2)],
+ store:["oStore",v=>fmt(v)],reorder:["oReorder",v=>Math.round(v*100)+"%"],cut:["oCut",v=>v],cutStart:["oCutStart",v=>"D+"+v],threat:["oThreat",v=>v],paceA:["oPaceA",v=>Math.round(v*100)+"%"],paceC:["oPaceC",v=>Math.round(v*100)+"%"],paceE:["oPaceE",v=>Math.round(v*100)+"%"],storm:["oStorm",v=>Math.round(v*100)+"%"],surge:["oSurge",v=>"+"+Math.round(v*100)+"%"]};
+function syncOutputs(){for(const [id,[o,f]] of Object.entries(OUT)) $(o).textContent=f($(id).value); syncFuel()}
+for(const id of Object.keys(OUT)) $(id).addEventListener("input",()=>{syncOutputs();
+ if(id==="pax"){S.pax=+$("pax").value;return}
+ if(id==="days"){S.days=+$("days").value}
+ if(id==="months"){S.months=+$("months").value; if(S._std&&stdKey()!==S._std){template(true);return}}
+ if(["store","reorder","cut","cutStart","threat","paceA","paceC","paceE"].includes(id)){renderPace();renderResupply();renderWhatIf();kpis();buildCampaign();draw();return}
+ changed()});
+$("pax").addEventListener("change",()=>template());
+["nplus1","gridOn","genFail"].forEach(id=>$(id).onchange=()=>{S.pace=null;changed()});
+$("fuelOverride").onchange=()=>{$("fuelCost").disabled=!$("fuelOverride").checked;syncFuel();changed()};
+$("fuelCost").oninput=()=>{syncFuel();changed()};
+$("btnTemplate").onclick=template; $("btnOpt").onclick=optimize; $("btnFull").onclick=runFull;
+$("btnPaceReset").onclick=()=>{S.pace=null;renderPace();buildCampaign()};
+$("paceAuto").onchange=()=>{buildCampaign();draw()};
+$("btnWhatReset").onclick=()=>{$("cut").value=0;$("storm").value=1;$("surge").value=0;$("threat").value=0;$("genFail").checked=false;syncOutputs();changed()};
+$("btnPrint").onclick=()=>{if(buildSpec())window.print()};
+$("selSeason").onchange=()=>{S.startSeason=+$("selSeason").value;buildCampaign();setClock(S.clock);draw()};
+$("clock").oninput=()=>{setClock(+$("clock").value,false);draw()};
+$("btnPlay").onclick=()=>{actx();if(!S.camp){toast("Waiting for the simulation (is the solver online?)");return}
+ if(!S.playing&&S.clock>=S.camp.H-1.01)setClock(0);S.playing=!S.playing;updPlayBtn()};
+$("btnBack").onclick=()=>{setClock(S.clock-24);draw()};
+$("btnFwd").onclick=()=>{setClock(S.clock+24);draw()};
+$("speed").oninput=()=>{S.rate=rateFromSlider(+$("speed").value);$("speedLbl").textContent=rateLbl(S.rate)};
+$("btnSound").onclick=()=>{SND.on=!SND.on;try{localStorage.setItem("fobSound",SND.on?"on":"off")}catch(e){}$("btnSound").innerHTML=SND.on?"&#128266;":"&#128263;";if(SND.on)actx();updateSound()};
+$("btnReroll").onclick=()=>{S.seed=(S.seed*48271+11)%2147483647;buildCampaign();draw();toast("New luck: delays and strikes re-drawn")};
+$("btnCoaSave").onclick=saveCoa;
+$("warns").onclick=()=>{S.warnOpen=!S.warnOpen;warnings()};
+function flashHud(){const h=$("hud");h.style.transition="none";h.style.borderColor="#e0574f";h.style.boxShadow="0 0 0 2px rgba(224,87,79,.6)";setTimeout(()=>{h.style.transition="all .8s";h.style.borderColor="";h.style.boxShadow=""},60)}
+function biomeNote(){const k=biomeKey();$("biomeNote").textContent=($("biome").value==="auto"?"Detected: ":"Set to: ")+BIOMES[k].name+". Changes the ground, vegetation, tent colour and walls. Auto uses latitude, sunshine and temperature of the site."}
+$("biome").onchange=()=>{biomeNote();if(biomeKey()!==S._biomeBuilt)template(true);else{renderKitNote();changed()}};
+$("btnBrief").onclick=()=>{if(BRIEF.i>=0)briefExit();else briefGo(0)};
+$("btnXlsx").onclick=exportXlsx;
+$("btnSaveScn").onclick=saveScenarioFile;
+$("btnOpenScn").onclick=()=>$("scnFile").click();
+$("scnFile").onchange=e=>{const f=e.target.files[0];if(f)openScenarioFile(f);e.target.value=""};
+$("legend").innerHTML=`dark building = power cut &middot; smoke = generator running &middot; fire = knocked out &middot; hover to name`;
+// override curHourIndex to include the day within the season
+curHourIndex = function(){return S.season*S.days*24 + (S.dayIx||0)*24 + S.hour};
+window.addEventListener("resize",resize);
+
+(async function init(){
+ buildPalette(); buildModeSliders(); $("pax").value=S.pax; syncOutputs(); resize();
+ $("speed").oninput(); $("btnSound").innerHTML=SND.on?"&#128266;":"&#128263;"; renderCoas(); setInterval(loop,30);
+ renderHud();
+ await ping(); setInterval(ping,15000);
+ template(); await initMap();
+})();
+</script>
+</body>
+</html>
