@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Project 2 Client Questions and COAs: CSM(R) Reynolds</title>
+<style>
+:root{--bg:#F3F6F7;--surface:#FFF;--ink:#13212B;--muted:#56656F;--line:#D5DEE3;--accent:#1B5E96;--accent-soft:#E2EDF6;--warm:#A8620F;--warm-soft:#F6EBDC;--ok:#22744E;--ok-soft:#DDF0E5;
+ --display:'Fraunces',Georgia,serif;--body:'IBM Plex Sans',system-ui,-apple-system,sans-serif;--mono:'IBM Plex Mono',ui-monospace,Menlo,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0F171C;--surface:#16222A;--ink:#E3ECF1;--muted:#97A7B1;--line:#2A3A44;--accent:#6FB0E8;--accent-soft:#1A3043;--warm:#E3A452;--warm-soft:#3A2A16;--ok:#5CC690;--ok-soft:#173527;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#0F171C;--surface:#16222A;--ink:#E3ECF1;--muted:#97A7B1;--line:#2A3A44;--accent:#6FB0E8;--accent-soft:#1A3043;--warm:#E3A452;--warm-soft:#3A2A16;--ok:#5CC690;--ok-soft:#173527;color-scheme:dark}
+:root[data-theme=light]{color-scheme:light}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+.wrap{max-width:860px;margin:0 auto;padding:24px 16px 80px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:13px;color:var(--muted)}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--display);font-weight:650;font-size:clamp(28px,5vw,40px);line-height:1.12;margin:2px 0 8px}
+h2{font-family:var(--display);font-weight:650;font-size:24px;margin:0}
+p{margin:0 0 10px;max-width:72ch}.lede{color:var(--muted)}
+button{font:inherit;font-size:14px;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 12px}
+button:hover{border-color:var(--accent)}button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.bar{position:sticky;top:0;z-index:2;background:var(--bg);display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+#count{font-family:var(--mono);font-size:13px;color:var(--muted);margin-left:auto}
+.callout{border-left:3px solid var(--accent);background:var(--accent-soft);padding:10px 14px;border-radius:0 8px 8px 0;margin:12px 0}
+.callout p:last-child{margin:0}
+.part{border-top:2px solid var(--ink);padding-top:14px;margin-top:30px}
+.part>p{color:var(--muted);font-size:15px;margin:2px 0 10px}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:10px}
+.q.asked{border-color:var(--ok)}
+.q.must{border-left:4px solid var(--warm)}
+.row{display:flex;gap:10px;align-items:flex-start}.row input{margin-top:6px;flex:none;width:16px;height:16px}
+.num{font-family:var(--mono);font-size:13px;color:var(--muted);flex:none;min-width:22px;padding-top:2px}
+.say{font-weight:500}
+.why{font-size:14px;color:var(--muted);margin:5px 0 0 48px}
+.lbl{font-family:var(--mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;font-weight:500}
+.why .lbl{color:var(--accent)}
+.coa{margin:8px 0 0 48px;padding:8px 10px;border-radius:6px;background:var(--ok-soft);font-size:14.5px}
+.coa .lbl{display:block;color:var(--ok);margin-bottom:1px}
+.alt{margin:6px 0 0 48px;padding:0 10px;font-size:14px;border-left:2px solid var(--warm)}
+.alt .lbl{display:block;color:var(--warm)}
+.tag{display:inline-block;font-size:11px;font-family:var(--mono);letter-spacing:.04em;background:var(--warm-soft);color:var(--warm);padding:0 7px;border-radius:999px;margin-left:6px;white-space:nowrap}
+textarea{display:block;width:calc(100% - 48px);margin:8px 0 0 48px;min-height:42px;font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;resize:vertical}
+body.mustonly .q:not(.must){display:none}
+body.nocoa .coa,body.nocoa .alt,body.nocoa #baseline{display:none}
+details{border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:10px 14px;margin-top:10px}summary{cursor:pointer;font-weight:500}details ul{margin:8px 0 0;padding-left:20px}details li{margin-bottom:6px}
+#baseline ul{margin:6px 0 0;padding-left:20px}#baseline li{margin-bottom:4px}
+@media print{body{background:#fff;color:#000;font-size:11px;line-height:1.35}.wrap{padding:0;max-width:none}.bar,.topbar,button{display:none!important}
+ .q{break-inside:avoid;padding:5px 8px;margin-top:5px}.part{margin-top:12px;padding-top:6px}textarea{min-height:26px;margin-top:3px;background:#fff}.why,.alt{font-size:10px;margin-top:2px}.coa{font-size:10.5px;margin-top:3px;padding:3px 6px}details{break-inside:avoid}h1{font-size:22px}h2{font-size:16px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="topbar"><span>MA481X · Project 2 · updated 5 Nov 2026</span><span><button id="theme">Light / dark</button> <button onclick="window.print()">Print</button></span></div>
+<header>
+<span class="eyebrow">Tactical Power Challenge · Client scope meeting</span>
+<h1>Questions and recommended COAs for CSM(R) Hal Reynolds</h1>
+<p class="lede">Each question has a recommended COA, the position to walk in with, and an alternate with what would trigger it. Propose the position, then let him change it. This is easier for a client than a blank question.</p>
+</header>
+
+<div class="callout">
+<p><strong>The project:</strong> a hybrid design and dispatch app that minimizes cost for a FOB of 200 kW peak or less, using generators, solar and batteries. It approximates the Scioletti et al. (2017) model. Deliverables are the working app, a one-page spec sheet and the measured approximation error.</p>
+<p><strong>Dates:</strong> scope meeting Thu 5 Nov 0745 · check-in Thu 19 Nov 0745 · final presentation Thu 10 Dec 0845-0940.</p>
+</div>
+
+<div class="callout" id="baseline">
+<p><strong>The recommended scope if he has no strong views:</strong></p>
+<ul>
+<li><strong>User:</strong> an S4 or base mayor planning a new base of under 150 people.</li>
+<li><strong>Horizon and fuel:</strong> one year at $50 per gallon, both editable.</li>
+<li><strong>Reliability:</strong> all demand met every hour, 30% load margin, and a spare generator rule that is on by default.</li>
+<li><strong>Solar:</strong> capped at a 100 m by 100 m site.</li>
+<li><strong>Output:</strong> equipment list, cost, gallons and convoys, compared with generators only, plus an hourly schedule and plain rules.</li>
+<li><strong>Delivery:</strong> one offline HTML file running HiGHS in the browser, as in Project 1.</li>
+</ul>
+<p style="margin-top:8px">These are recommendations for your team to confirm, not agreed positions. Values credited to the paper or prompt come from those documents. Anything marked "our assumption" still needs a source or his sign-off.</p>
+</div>
+
+<div class="bar">
+<button id="mustBtn">Must-ask only</button>
+<button id="coaBtn">Hide COAs</button>
+<button id="copyBtn">Copy my notes</button>
+<span id="count"></span>
+</div>
+
+<div id="parts"></div>
+
+<div class="part" id="notclient">
+<h2>Don't spend his time on these</h2>
+<p>He shouldn't have to answer these. Take them to COL Scioletti or research them yourselves.</p>
+<details open><summary>For COL Scioletti</summary><ul>
+<li>How should approximation error be measured: against the full nonlinear model on which instances, and what size of gap is acceptable?</li>
+<li>Which solvers and languages are allowed, and does the app need to solve live or can it use precomputed results?</li>
+<li>What are the AI authorization level and the documentation requirement for this project?</li>
+<li>How much of the role-play is fixed: does CSM(R) Reynolds set the requirements, or can the prompt overrule him?</li>
+<li>Does the prompt's 200 kW cap apply before or after the load margin? At the paper's 30% margin, 200 kW of demand means sizing for 260 kW.</li>
+</ul></details>
+<details><summary>For the team to research</summary><ul>
+<li>Generator fuel curves and minimum and maximum power ratings.</li>
+<li>Battery voltage, capacity, efficiency and lifetime parameters.</li>
+<li>Panel output, temperature and dust effects, and site irradiance data.</li>
+<li>Published fully burdened fuel estimates (Noblis 2010 and Vavrin 2010 are in the prompt's references). Bring a range for him to react to in question 13.</li>
+</ul></details>
+</div>
+</div>
+
+<script>
+const DATA=[
+{t:"Start here: the decision",d:"Set the frame first. Every later answer depends on who uses this and for what.",q:[
+{m:1,s:"Sergeant Major, which FOBs or deployments did you see power decisions up close, and who actually owned power on those bases?",w:"Shows where his experience is firm, so you know which answers to treat as data and which as opinion.",
+ r:"Log each answer as experience, opinion or assumption. Treat his firsthand accounts as requirements, and check any numbers against the prompt's references.",
+ a:["He never owned power directly","Use him for how units and soldiers behave, and take technical figures from Noblis and Vavrin."]},
+{m:1,s:"Who sits down at this app: an S4, an engineer, a base mayor, someone else? How much training and time do they have?",w:"Sets the app's vocabulary, how many inputs it exposes and how much it explains.",
+ r:"Design for an S4 or base mayor with no optimization background: plain labels, every input pre-filled, and a first answer in about 10 minutes (our assumption).",
+ a:["He says an engineer","Put fuel curves and battery settings up front instead of behind an Advanced panel."]},
+{m:1,s:"What decision does it help them make: what to request before deployment, how to run the power each day, or both?",w:"Design versus dispatch. If he only cares about one, the other can be simplified.",
+ r:"Lead with design, meaning what to buy, and use dispatch as the proof that it works. The prompt requires both outputs either way.",
+ a:["He cares mostly about daily operations","Make dispatch the main view and let the user lock in equipment already chosen. Keep the design output, because the prompt requires it."]},
+{s:"Is this a new base being planned, or an existing base with generators already on the ground that we are improving?",w:"An existing base means sunk equipment, so the model must allow existing assets at zero purchase cost.",
+ r:"Plan for a new base. Add an 'already on hand' input only if time allows.",
+ a:["He says an existing base","Set the purchase cost of on-hand equipment to zero and make that the main workflow."]},
+{m:1,s:"Picture 10 December. What would you need to see to say, 'I would hand this to a unit'?",w:"Your acceptance test. Read it back to him and use it to judge the final demonstration.",
+ r:"Propose this test: an S4 enters a load, gets equipment, cost, gallons, convoys and a schedule in under 10 minutes, and can explain the result to a commander.",
+ a:["His test goes beyond the prompt","Log it as a stretch goal and check with COL Scioletti before committing."]}
+]},
+{t:"The base and its load",d:"Feeds the demand portfolio of up to 20 profiles at 200 kW peak or less.",q:[
+{m:1,s:"Describe the base you have in mind: how many people, what mission, what part of the world, what climate?",w:"Anchors the portfolio's locations and seasons, and the irradiance and temperature data you pull.",
+ r:"Propose a notional base of under 150 people on a site under 100 m by 100 m, which matches the paper's Table 1. Use hot desert and cold climates as the two poles.",
+ a:["He names a specific theater","Weight most profiles toward that climate and keep one contrasting climate."]},
+{m:1,s:"Walk me through a day there. What draws the most power, and when does it peak?",w:"Shapes the hourly curves. Listen for heating and cooling, the operations center, medical, dining and maintenance.",
+ r:"Build each profile from load blocks such as cooling, operations center, medical and dining, added hour by hour. That gives every curve a traceable reason.",
+ a:["He can't estimate kW","Scale the shapes of the prompt's three example curves and label them notional. He checks the timing and you source the size."]},
+{s:"The prompt suggests base, medical, training, maintenance and aviation profiles. Is anything missing, and which matter most?",w:"Decides which of the 20 profiles to build first.",
+ r:"Use a simple grid: 5 mission types, 2 seasons and 2 climates make exactly 20 profiles.",
+ a:["He ranks some missions low","Drop those cells, since the prompt says 'up to 20'. Fewer solid profiles beat 20 thin ones."]},
+{s:"How much does load jump in a surge, a mass casualty event, or when another unit moves in? Is 200 kW a realistic ceiling for your base?",w:"Gives you stress-test profiles and shows whether the peak cap feels right to him.",
+ r:"Stay at the prompt's 200 kW cap and model surge as its own profile under that cap.",
+ a:["His surge exceeds 200 kW","Tell him the cap comes from the prompt, have the app warn when input exceeds it, and raise it with COL Scioletti."]},
+{s:"Do units really know their load from meters, or is it an estimate? How far off have you seen those estimates be?",w:"Sets the overage coefficient in constraint (2a), the margin above forecast demand.",
+ r:"Default to the paper's 30% load margin and make it adjustable.",
+ a:["He says estimates run far off, or are very accurate","Use his margin as the default, and show 30% beside it so the cost of the difference is visible."]},
+{m:1,s:"What can never lose power, even for a minute? What could you shut off first, and for how long?",w:"Constraint (2a) requires full demand every hour. If he accepts shedding, you may want critical and deferrable loads.",
+ r:"Keep the paper's rule that all demand is met every hour. Tag critical loads in each profile so the app can report on them.",
+ a:["He accepts shutting off some loads","Add a deferrable load with a penalty for unmet demand, keep critical loads firm, and show how much money shedding saves."]}
+]},
+{t:"What 'cost' really means",d:"The prompt says minimize cost. Check that this is what he would actually choose.",q:[
+{m:1,s:"If the cheapest option means more convoys, and a safer option costs more up front, which one does a commander pick?",w:"Tells you whether one objective is enough or the app needs a trade-off view.",
+ r:"Keep one objective, lowest total cost, with convoy risk priced through the fully burdened fuel cost. Add a fuel cap slider to show what fewer gallons would cost. Expect pushback: the paper says commanders prioritize reliability over fuel efficiency.",
+ a:["He wants risk shown explicitly","Make a cost versus convoys curve a main result, so the commander picks the point."]},
+{m:1,s:"How often was fuel delivered, with how many trucks and how much security? Here is a range of fully burdened fuel prices: which feels right for your base?",w:"Sets the fuel cost penalty in the objective, the term that most drives the solar and battery case. Ask whether it should vary by threat.",
+ r:"Default to $50 per gallon, the paper's starting value, and make it editable. Sweep it in a sensitivity tab using the range you pull from Noblis and Vavrin.",
+ a:["He says it depends on threat","Add low, medium and high threat presets, with each value logged as his assumption until sourced."]},
+{s:"Should the app report convoys avoided or soldiers on the road, alongside dollars and gallons?",w:"Adds outputs a leader cares about. Convoy counts are not in the paper's model, so you would compute them from fuel use.",
+ r:"Report dollars, gallons and convoys. Compute convoys as gallons divided by tanker capacity, defaulting to the 2,500-gallon tanker from your Project 1 deck. Leave soldiers on the road out unless he gives you crew numbers.",
+ a:["He wants only dollars up front","Move convoys to a details tab."]},
+{m:1,s:"How long does this base last: six months, a year, five? Does the equipment leave with the unit afterward?",w:"Sets the duration ratio in the objective. A short stay can kill the case for solar, because its value comes from fuel saved over time.",
+ r:"Default to one year with no resale value. The paper uses a one-year FOB lifetime and the prompt's sample output shows a one-year cost. Make duration an input.",
+ a:["He says under a year, or the equipment moves on","Show the break-even month for solar and batteries, and consider charging only part of the purchase cost to this base."]},
+{s:"Who pays for equipment, and who pays for fuel? Does the person buying the panels ever see the fuel savings?",w:"Shows whether a lowest-total-cost answer would actually get approved.",
+ r:"Keep total cost as the objective and show purchase and fuel as separate lines.",
+ a:["He says the budgets are separate","Add a purchase budget cap and show the fuel savings that cap gives up."]}
+]},
+{t:"Equipment on the ground",d:"Turns the model's clean assumptions into what soldiers would really do.",q:[
+{m:1,s:"Can a unit actually get commercial equipment, or only what is already in the Army system?",w:"Sets the technology list. You research the specs; he tells you what is obtainable.",
+ r:"Build a catalog with commercial and military items, each tagged by source, and add an 'Army system only' filter. Default to showing both.",
+ a:["He says Army system only","Turn the filter on by default and show what commercial options would have saved."]},
+{s:"How much spare generator capacity would a commander insist on? Is one generator down ever acceptable?",w:"The paper's reserve constraint (2b) covers solar variability. A spare-generator rule would be a new constraint.",
+ r:"Add a spare generator rule, on by default: with the largest generator down, the rest must still cover peak demand. Report what the rule costs.",
+ a:["He accepts the risk at a small base","Default the rule to off and keep the toggle."]},
+{s:"Who runs and services the generators? What problems did you see, like running too lightly loaded, breakdowns, or missed service?",w:"Tests the minimum power limits, lifetime values and maintenance cost assumptions.",
+ r:"Use each generator's specified minimum load and service life, with 9,000 hours from the paper as the check. Don't build a separate maintenance model.",
+ a:["He says light loading or breakdowns were common","Raise the minimum load limit and the wear penalty, and show the effect in sensitivity."]},
+{m:1,s:"Would you want solar panels on your base? What worries you: footprint, cleaning them in the dust, incoming fire, being seen, moving them?",w:"Sets the maximum panel count and dust derating. May also cap solar well below what the math would choose.",
+ r:"Include solar with an area limit defaulting to the paper's 100 m by 100 m. Use fixed-tilt panels, as the paper does, and reduce output for dust by site.",
+ a:["He rejects solar","Run generators and batteries as the default, and show what refusing solar costs in dollars and convoys."]},
+{s:"What would worry you about lithium batteries on a FOB: fire, heat, hauling them?",w:"May rule out some battery types or add temperature and siting limits.",
+ r:"Default to lithium-ion, which the paper uses, with an on/off toggle and reduced performance in heat.",
+ a:["He rules out lithium","Run generators and solar only, a case the paper also compares, or research another chemistry if time allows."]},
+{s:"How does this equipment get there, and how fast must it be running? Does the base ever have to pick up and move?",w:"Weight, container count and setup time may need to be constraints, and they are not in the paper's model.",
+ r:"Report weight, container count and setup time as outputs from the spec sheets, and don't constrain them.",
+ a:["He gives a hard lift limit","Add a weight or container cap on the purchase decision."]},
+{s:"When things go wrong, like a late convoy, a dead generator, or a week of dust storm, what happens? How many days of fuel do you keep on hand?",w:"Gives you the worst-case scenarios and a possible fuel reserve rule. Good material for the sensitivity tab.",
+ r:"Stress-test after solving: hold the equipment fixed and rerun dispatch with a dead generator, degraded solar and a late convoy. Report whether the load was met and the days of fuel used.",
+ a:["He gives a days-on-hand rule","Size fuel storage to it and show it on the spec sheet."]}
+]},
+{t:"The app itself",d:"Feeds the 'user-friendly app' criterion and the sample output in the prompt.",q:[
+{m:1,s:"Would a soldier actually follow an hour-by-hour generator schedule, or would they need simple rules like 'second generator off by 1000'?",w:"May be the most important answer about dispatch. It decides whether you present a schedule, rules or both.",
+ r:"Show both: the hourly schedule the prompt requires, and plain rules drawn from it.",
+ a:["He says soldiers will only follow rules","Lead with the rules, and test them against the optimized schedule to report what simplicity costs."]},
+{s:"What computer would this run on? Would it have internet? Could it need to work completely offline?",w:"Settles the architecture, including whether a cloud solver is acceptable.",
+ r:"Deliver one offline HTML file with HiGHS running in the browser, as in your Project 1 app. No install and no internet.",
+ a:["Live solving is too slow or gets blocked","Ship a library of precomputed scenarios and let the app interpolate or look them up. Confirm with COL Scioletti that this is allowed."]},
+{s:"What should the user be able to change, and what should stay hidden? When the prompt says 'operational preferences', what would you want to set?",w:"Defines the input panel. That phrase is undefined in the prompt, so he can define it for you.",
+ r:"Put five inputs up front: load profile, location and season, allowed equipment, fuel price and base duration. Offer 'operational preferences' as the spare generator rule, solar area limit and minimum fuel days. Everything else goes under Advanced with defaults.",
+ a:["His definition differs","Use his and log it, as long as the prompt's listed inputs stay available."]},
+{m:1,s:"On the first screen, what must a commander see in ten seconds?",w:"Sets the results layout, and the one-page spec sheet can follow it.",
+ r:"Show the equipment list, total cost, gallons and convoys, each compared with generators only, plus a clear 'load met' status. Use the same order on the spec sheet.",
+ a:["He names something else","Lead with his choice and move the rest to the next tab, while keeping approximation error visible for grading."]},
+{s:"What would make you distrust a recommendation from this app? Would a side-by-side with 'generators only' help?",w:"Tells you what credibility evidence to build. The baseline is cheap to add and easy to brief.",
+ r:"Always show the generators-only baseline, the assumptions used and the approximation error. Sanity-check against the paper, where the hybrid used 33% less fuel at Bagram and 9% less at Tallinn.",
+ a:["He still doubts the numbers","Walk him through one day's fuel by hand so he can see the app's math."]}
+]},
+{t:"Close the meeting",d:"Leave with scope agreed and a way to get unstuck.",q:[
+{m:1,s:"When you don't have a number, can we propose an assumption and get your sign-off by email?",w:"Keeps him from having to know everything, and gives you a logged basis for each assumption.",
+ r:"Start an assumptions log today with the value, source, owner and date. Send him batches rather than one-off emails, because he is doing this as a favor.",
+ a:["He is hard to reach","Mark each item 'team assumption' and clear them together at the 19 November check-in."]},
+{s:"If we run short on time, what is the one feature you would keep? What can we drop first?",w:"Your must-have and nice-to-have list.",
+ r:"Treat everything the prompt requires as fixed, and let him rank only what sits above it. Drop first: threat presets, the budget cap and the rules-versus-schedule comparison.",
+ a:["He wants to drop a required item","Keep it and raise the conflict with COL Scioletti. The prompt's criteria still drive the grade."]},
+{s:"Do you have anything you can share, like load data, after-action reports or photos, and is there anyone else we should talk to? We will stick to unclassified information and a notional location.",w:"Gives you real data where possible and keeps the project clear of anything sensitive.",
+ r:"Plan to succeed on public sources and a notional location, treating anything he shares as a bonus.",
+ a:["He offers anything marked or sensitive","Decline it and tell COL Scioletti."]},
+{s:"What would you like to see at the 19 November check-in?",w:"Sets the next milestone. Send him a short scope summary after this meeting to confirm it.",
+ r:"Offer a running app with one demand profile and one real equipment set, a first approximation error number and the assumptions log. Email the scope summary within 24 hours of this meeting.",
+ a:["He wants more by then","Agree on priorities with the team first, and tell him what moves to 10 December."]}
+]}
+];
+const KEY='p2-client-q:';
+const root=document.getElementById('parts');let n=0;
+function block(cls,label,text){const d=document.createElement('div');d.className=cls;const l=document.createElement('span');l.className='lbl';l.textContent=label;d.append(l,document.createTextNode(text));return d;}
+DATA.forEach(p=>{const sec=document.createElement('div');sec.className='part';
+ const h=document.createElement('h2');h.textContent=p.t;const d=document.createElement('p');d.textContent=p.d;sec.append(h,d);
+ p.q.forEach(q=>{n++;const id='q'+n;const el=document.createElement('div');el.className='q'+(q.m?' must':'');el.dataset.id=id;
+  const row=document.createElement('label');row.className='row';const cb=document.createElement('input');cb.type='checkbox';cb.setAttribute('aria-label','Asked question '+n);
+  const num=document.createElement('span');num.className='num';num.textContent=n;
+  const say=document.createElement('span');say.className='say';say.textContent=q.s;if(q.m){const tg=document.createElement('span');tg.className='tag';tg.textContent='must ask';say.append(tg);}
+  row.append(cb,num,say);
+  const why=document.createElement('div');why.className='why';const b=document.createElement('span');b.className='lbl';b.textContent='Settles ';why.append(b,document.createTextNode(q.w));
+  const coa=block('coa','Recommended COA',q.r);
+  const alt=block('alt','Alternate if: '+q.a[0],q.a[1]);
+  const ta=document.createElement('textarea');ta.placeholder='His answer';ta.setAttribute('aria-label','Notes for question '+n);
+  ta.value=localStorage.getItem(KEY+id)||'';ta.oninput=()=>localStorage.setItem(KEY+id,ta.value);
+  cb.checked=localStorage.getItem(KEY+'c'+id)==='1';el.classList.toggle('asked',cb.checked);
+  cb.onchange=()=>{localStorage.setItem(KEY+'c'+id,cb.checked?'1':'0');el.classList.toggle('asked',cb.checked);count();};
+  el.append(row,why,coa,alt,ta);el.dataset.say=q.s;sec.append(el);});
+ root.append(sec);});
+function count(){const v=[...document.querySelectorAll('.q')].filter(e=>getComputedStyle(e).display!=='none');const a=v.filter(e=>e.classList.contains('asked')).length;document.getElementById('count').textContent=a+' of '+v.length+' asked';}
+const mb=document.getElementById('mustBtn');mb.onclick=()=>{const on=document.body.classList.toggle('mustonly');mb.classList.toggle('on',on);mb.textContent=on?'Show all questions':'Must-ask only';count();};
+const cbn=document.getElementById('coaBtn');cbn.onclick=()=>{const off=document.body.classList.toggle('nocoa');cbn.classList.toggle('on',off);cbn.textContent=off?'Show COAs':'Hide COAs';};
+document.getElementById('copyBtn').onclick=async e=>{const out=[...document.querySelectorAll('.q')].map(q=>{const v=q.querySelector('textarea').value.trim();return v?('Q: '+q.dataset.say+'\nA: '+v):'';}).filter(Boolean).join('\n\n')||'No notes yet.';
+ const btn=e.target;try{await navigator.clipboard.writeText(out);btn.textContent='Copied';}catch(_){const t=document.createElement('textarea');t.value=out;document.body.append(t);t.select();document.execCommand('copy');t.remove();btn.textContent='Copied';}setTimeout(()=>btn.textContent='Copy my notes',1400);};
+document.getElementById('theme').onclick=()=>{const r=document.documentElement;const cur=r.dataset.theme==='dark'||(r.dataset.theme!=='light'&&matchMedia('(prefers-color-scheme:dark)').matches);r.dataset.theme=cur?'light':'dark';};
+count();
+</script>
+</body>
+</html>
