@@ -4,8 +4,10 @@
 
 1. Sign in to GitHub and open this repository.
 2. Click the green **Code** button, open the **Codespaces** tab, and click **Create codespace on main**.
-3. Wait 2 to 3 minutes the first time while it sets up Python, numpy and scipy. A terminal at the bottom shows
-   `FOB Power Planner on http://0.0.0.0:8481`. Leave that terminal running.
+3. Wait 2 to 3 minutes the first time while it sets up Python, numpy and scipy. If a box asks
+   **"Do you trust the authors of the files in this folder?"**, click **Trust Folder & Continue** (the server won't
+   start otherwise). A terminal at the bottom then shows `FOB Power Planner on http://127.0.0.1:8481`.
+   Leave that terminal running.
 4. The app opens in a new browser tab. If it doesn't (pop-up blocker), open the **Ports** tab at the bottom
    and click the globe icon next to port **8481**.
 
