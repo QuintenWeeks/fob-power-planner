@@ -901,7 +901,7 @@ async function runFull(){
 let MAP, PRESETS=[];
 async function initMap(){
  MAP=L.map("map",{worldCopyJump:true}).setView([30,30],2);
- L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:8,attribution:"&copy; OpenStreetMap"}).addTo(MAP);
+ L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",{maxZoom:8,subdomains:"abcd",attribution:"&copy; OpenStreetMap contributors &copy; CARTO"}).addTo(MAP);
  try{PRESETS=await (await fetch("data/presets.json")).json()}catch(e){PRESETS=[]}
  PRESETS.forEach(p=>{L.circleMarker([p.lat,p.lon],{radius:6,color:"#d9a441"}).addTo(MAP).bindTooltip(p.name).on("click",()=>loadPreset(p))});
  $("presetBtns").innerHTML=PRESETS.map((p,i)=>`<button class="small" data-p="${i}" style="margin:2px">${p.name}</button>`).join("");
