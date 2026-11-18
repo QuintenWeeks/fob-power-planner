@@ -20,7 +20,7 @@ button.on,button.primary{background:var(--accent);border-color:var(--accent);col
 button.small{padding:3px 8px;font-size:12px}
 input[type=range]{width:100%;accent-color:var(--accent)}
 input[type=number],select,input[type=text]{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:5px;padding:3px 6px;font:inherit;width:90px}
-.app{display:grid;grid-template-columns:230px 1fr 470px;grid-template-rows:auto 1fr;height:100vh}
+.app{display:grid;grid-template-columns:230px 1fr 150px;grid-template-rows:auto 1fr;height:100vh}
 header{grid-column:1/4;display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);background:#121a16;flex-wrap:wrap}
 header h1{font-size:18px;margin:0 8px 0 0;letter-spacing:.04em}
 header h1 span{color:var(--accent)}
@@ -105,6 +105,14 @@ table.t td{border-bottom:1px solid var(--line);padding:4px;vertical-align:top}
 .pacebadge{display:inline-block;font-family:var(--mono);font-weight:700;padding:0 6px;border-radius:4px;color:#111}
 .coa-best{color:var(--ok);font-weight:700}
 .coa-worst{color:var(--bad)}
+/* Right-side menus: a column of label buttons; each pops its panel out to the left, click again to close */
+section.side{position:relative;overflow:visible;z-index:6}
+section.side .tabs{flex-direction:column;flex-wrap:nowrap;gap:6px;padding:10px 8px;border-bottom:none;overflow:auto}
+section.side .tabs button{width:100%;text-align:left;padding:8px 10px}
+section.side:not(.open) .tabs button.on{background:var(--panel2);border-color:var(--line);color:var(--ink);font-weight:400}
+section.side.open .tabs button.on::before{content:"\25C2  "}
+section.side>.tabpane{display:block;position:absolute;top:0;bottom:0;right:100%;width:470px;max-width:calc(100vw - 400px);box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-right:none;box-shadow:-12px 0 30px rgba(0,0,0,.45);visibility:hidden;opacity:0;transform:translateX(16px);pointer-events:none;transition:opacity .15s,transform .15s,visibility 0s .15s}
+section.side.open>.tabpane.show{visibility:visible;opacity:1;transform:none;pointer-events:auto;transition:opacity .15s,transform .15s}
 @media print{
  body{background:#fff;color:#000}
  .app{display:none}
@@ -1772,6 +1780,21 @@ window.addEventListener("resize",resize);
  renderHud();
  await ping(); setInterval(ping,15000);
  template(); await initMap();
+})();
+</script>
+<script>
+/* Right-side menus as pop-out panels: clicking a label opens its panel, clicking the same label again closes it.
+   Programmatic switches (Brief mode's tabGo) always open the panel. Esc also closes it. */
+(function(){
+  const side=document.querySelector("section.side");
+  if(!side)return;
+  document.addEventListener("click",e=>{
+    const b=e.target.closest&&e.target.closest("#tabs button");
+    if(!b)return;
+    const close=e.isTrusted&&b.classList.contains("on")&&side.classList.contains("open");
+    setTimeout(()=>side.classList.toggle("open",!close),0);
+  },true);
+  document.addEventListener("keydown",e=>{if(e.key==="Escape")side.classList.remove("open")});
 })();
 </script>
 </body>
