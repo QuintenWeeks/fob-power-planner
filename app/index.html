@@ -147,7 +147,7 @@ section.side.open>.tabpane.show{visibility:visible;opacity:1;transform:none;poin
  <button id="btnPrint">Spec sheet</button><label class="note" title="Add an appendix page: COA comparison, fuel over the deployment, approximation error"><input type="checkbox" id="spec2"> 2-page</label>
  <button id="btnXlsx" title="Export results to Excel">Excel</button>
  <button id="btnSaveScn" title="Save this scenario to a file">Save file</button>
- <button id="btnOpenScn" title="Open a saved scenario file">Open file</button><input type="file" id="scnFile" accept=".json,application/json" style="display:none">
+ <button id="btnOpenScn" title="Open a saved scenario file">Open file</button><input type="file" id="scnFile" accept=".json,application/json" style="display:none"><button id="btnFull" title="Fill the whole screen with the app (Esc to exit)">&#x26F6; Full screen</button>
 </header>
 
 <aside class="palette" id="palette"></aside>
@@ -1795,6 +1795,23 @@ window.addEventListener("resize",resize);
     setTimeout(()=>side.classList.toggle("open",!close),0);
   },true);
   document.addEventListener("keydown",e=>{if(e.key==="Escape")side.classList.remove("open")});
+})();
+</script>
+<script>
+/* Full screen mode: the button fills the monitor with the app; click again or press Esc to exit. */
+(function(){
+  const b=document.getElementById("btnFull");
+  if(!b)return;
+  const el=document.documentElement;
+  const isFs=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
+  if(!(el.requestFullscreen||el.webkitRequestFullscreen)){b.style.display="none";return}
+  b.onclick=()=>{
+    if(isFs())(document.exitFullscreen||document.webkitExitFullscreen).call(document);
+    else{const r=(el.requestFullscreen||el.webkitRequestFullscreen).call(el);if(r&&r.catch)r.catch(()=>{})}
+  };
+  const sync=()=>{const on=isFs();b.classList.toggle("on",on);b.innerHTML=on?"&#x2715; Exit full screen":"&#x26F6; Full screen";setTimeout(()=>window.dispatchEvent(new Event("resize")),60)};
+  document.addEventListener("fullscreenchange",sync);
+  document.addEventListener("webkitfullscreenchange",sync);
 })();
 </script>
 </body>
