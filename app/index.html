@@ -113,6 +113,17 @@ section.side:not(.open) .tabs button.on{background:var(--panel2);border-color:va
 section.side.open .tabs button.on::before{content:"\25C2  "}
 section.side>.tabpane{display:block;position:absolute;top:0;bottom:0;right:100%;width:470px;max-width:calc(100vw - 400px);box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-right:none;box-shadow:-12px 0 30px rgba(0,0,0,.45);visibility:hidden;opacity:0;transform:translateX(16px);pointer-events:none;transition:opacity .15s,transform .15s,visibility 0s .15s}
 section.side.open>.tabpane.show{visibility:visible;opacity:1;transform:none;pointer-events:auto;transition:opacity .15s,transform .15s}
+/* Top banner: playback controls on the left, title, settings, KPIs and buttons on the right */
+header{flex-wrap:nowrap;align-items:stretch;gap:14px}
+header .hdr-play{flex:0 1 48%;min-width:560px;display:flex}
+header .hdr-play .player{position:static;flex:1;background:var(--panel);padding:6px 10px;gap:8px;row-gap:5px}
+header .hdr-play .hudstrip{gap:12px;padding-bottom:5px}
+header .hdr-play .speed{width:110px}
+header .hdr-play #speedLbl{min-width:58px!important}
+header .hdr-play .note{white-space:nowrap}
+header .hdr-play .scrub input{flex:1 1 auto;min-width:80px;width:auto}
+header .hdr-play #hourLbl{min-width:0!important;white-space:nowrap;flex:none}
+header .hdr-main{flex:1 1 52%;min-width:0;display:flex;flex-wrap:wrap;align-items:center;align-content:center;gap:8px 10px}
 @media print{
  body{background:#fff;color:#000}
  .app{display:none}
@@ -129,6 +140,21 @@ section.side.open>.tabpane.show{visibility:visible;opacity:1;transform:none;poin
 <body>
 <div class="app" id="app">
 <header>
+ <div class="hdr-play">
+ <div class="player">
+  <div class="hudstrip" id="hud"></div>
+  <button id="btnBack" class="small" title="Back one day">&#9198;</button>
+  <button id="btnPlay" class="small primary" style="min-width:74px">&#9654; Play</button>
+  <button id="btnFwd" class="small" title="Forward one day">&#9197;</button>
+  <span class="note">Speed</span><input type="range" id="speed" class="speed" min="0" max="100" value="38" title="6 game-minutes per second up to 10 months per second">
+  <span class="lbl" id="speedLbl" style="min-width:80px"></span>
+  <span class="note">Deployment starts in</span>
+  <select id="selSeason"><option value="0">Winter</option><option value="1">Spring</option><option value="2" selected>Summer</option><option value="3">Fall</option></select>
+  <button id="btnSound" class="small" title="Sound on/off">&#128266;</button>
+  <div class="scrub"><input type="range" id="clock" min="0" max="8759" value="12"><span class="lbl" id="hourLbl" style="min-width:290px">D+0 12:00</span></div>
+ </div>
+ </div>
+ <div class="hdr-main">
  <h1>FOB <span>POWER</span> PLANNER</h1>
  <div class="seg" id="segType"><button data-v="exp" class="on">Expeditionary</button><button data-v="exist">Existing</button></div>
  <div class="seg" id="segSize"><button data-v="CO" class="on">CO FOB</button><button data-v="BN">BN FOB</button></div>
@@ -148,6 +174,7 @@ section.side.open>.tabpane.show{visibility:visible;opacity:1;transform:none;poin
  <button id="btnXlsx" title="Export results to Excel">Excel</button>
  <button id="btnSaveScn" title="Save this scenario to a file">Save file</button>
  <button id="btnOpenScn" title="Open a saved scenario file">Open file</button><input type="file" id="scnFile" accept=".json,application/json" style="display:none"><button id="btnFull" title="Fill the whole screen with the app (Esc to exit)">&#x26F6; Full screen</button>
+ </div>
 </header>
 
 <aside class="palette" id="palette"></aside>
@@ -157,20 +184,9 @@ section.side.open>.tabpane.show{visibility:visible;opacity:1;transform:none;poin
  <div class="legend" id="legend"></div>
  <div class="warns" id="warns"></div>
  <div class="inspector" id="insp"></div>
- <div class="inspector" id="optBanner" style="left:auto;right:12px;top:auto;bottom:70px;width:340px"></div>
+ <div class="inspector" id="optBanner" style="left:auto;right:12px;top:auto;bottom:12px;width:340px"></div>
  <div class="brief" id="brief"></div>
- <div class="player">
-  <div class="hudstrip" id="hud"></div>
-  <button id="btnBack" class="small" title="Back one day">&#9198;</button>
-  <button id="btnPlay" class="small primary" style="min-width:74px">&#9654; Play</button>
-  <button id="btnFwd" class="small" title="Forward one day">&#9197;</button>
-  <span class="note">Speed</span><input type="range" id="speed" class="speed" min="0" max="100" value="38" title="6 game-minutes per second up to 10 months per second">
-  <span class="lbl" id="speedLbl" style="min-width:80px"></span>
-  <span class="note">Deployment starts in</span>
-  <select id="selSeason"><option value="0">Winter</option><option value="1">Spring</option><option value="2" selected>Summer</option><option value="3">Fall</option></select>
-  <button id="btnSound" class="small" title="Sound on/off">&#128266;</button>
-  <div class="scrub"><input type="range" id="clock" min="0" max="8759" value="12"><span class="lbl" id="hourLbl" style="min-width:290px">D+0 12:00</span></div>
- </div>
+
 </main>
 
 <section class="side">
